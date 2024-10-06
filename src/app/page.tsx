@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import {
   AppBar,
@@ -23,8 +25,8 @@ import {
   Grid2 as Grid,
   Fab,
 } from "@mui/material";
-import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
-import { ArrowUpward as ArrowUpwardIcon } from "@mui/icons-material";
+import { Shield, Home, Car, Briefcase, Heart, Check } from "lucide-react";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const theme = createTheme({
   palette: {
@@ -96,6 +98,18 @@ export default function EnhancedInsuranceLandingPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const scrollToAbout = (sectionName: string) => {
+    const sectionId = document.getElementById(sectionName);
+    const headerOffset = 94;
+    const elementPosition = sectionId?.getBoundingClientRect().top || 0;
+    const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -114,59 +128,21 @@ export default function EnhancedInsuranceLandingPage() {
             </Typography>
             <Button
               color="inherit"
-              onClick={() => {
-                const sectionId = document.getElementById("services-section");
-                const headerOffset = 94;
-                const elementPosition =
-                  sectionId?.getBoundingClientRect().top || 0;
-                const offsetPosition =
-                  elementPosition + window.scrollY - headerOffset;
-
-                window.scrollTo({
-                  top: offsetPosition,
-                  behavior: "smooth",
-                });
-              }}
+              onClick={() => scrollToAbout("services-section")}
             >
               Servicios
             </Button>
             <Button
               color="inherit"
               onClick={() => {
-                {
-                  const sectionId = document.getElementById("about-section");
-                  const headerOffset = 94;
-                  const elementPosition =
-                    sectionId?.getBoundingClientRect().top || 0;
-                  const offsetPosition =
-                    elementPosition + window.scrollY - headerOffset;
-
-                  window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth",
-                  });
-                }
+                scrollToAbout("about-section");
               }}
             >
               Acerca de
             </Button>
             <Button
               color="inherit"
-              onClick={() => {
-                {
-                  const sectionId = document.getElementById("contact-section");
-                  const headerOffset = 94;
-                  const elementPosition =
-                    sectionId?.getBoundingClientRect().top || 0;
-                  const offsetPosition =
-                    elementPosition + window.scrollY - headerOffset;
-
-                  window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth",
-                  });
-                }
-              }}
+              onClick={() => scrollToAbout("contact-section")}
             >
               Contacto
             </Button>
@@ -472,66 +448,21 @@ export default function EnhancedInsuranceLandingPage() {
                 </Typography>
                 <Typography
                   variant="body2"
-                  onClick={() => {
-                    {
-                      const sectionId =
-                        document.getElementById("services-section");
-                      const headerOffset = 94;
-                      const elementPosition =
-                        sectionId?.getBoundingClientRect().top || 0;
-                      const offsetPosition =
-                        elementPosition + window.scrollY - headerOffset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth",
-                      });
-                    }
-                  }}
+                  onClick={() => scrollToAbout("services-section")}
                   sx={{ cursor: "pointer" }}
                 >
                   Servicios
                 </Typography>
                 <Typography
                   variant="body2"
-                  onClick={() => {
-                    {
-                      const sectionId =
-                        document.getElementById("about-section");
-                      const headerOffset = 94;
-                      const elementPosition =
-                        sectionId?.getBoundingClientRect().top || 0;
-                      const offsetPosition =
-                        elementPosition + window.scrollY - headerOffset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth",
-                      });
-                    }
-                  }}
+                  onClick={() => scrollToAbout("about-section")}
                   sx={{ cursor: "pointer" }}
                 >
                   Acerca de
                 </Typography>
                 <Typography
                   variant="body2"
-                  onClick={() => {
-                    {
-                      const sectionId =
-                        document.getElementById("contact-section");
-                      const headerOffset = 94;
-                      const elementPosition =
-                        sectionId?.getBoundingClientRect().top || 0;
-                      const offsetPosition =
-                        elementPosition + window.scrollY - headerOffset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth",
-                      });
-                    }
-                  }}
+                  onClick={() => scrollToAbout("contact-section")}
                   sx={{ cursor: "pointer" }}
                 >
                   Contacto
