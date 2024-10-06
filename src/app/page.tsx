@@ -25,7 +25,7 @@ import {
   Grid2 as Grid,
   Fab,
 } from "@mui/material";
-import { Shield, Home, Car, Briefcase, Heart, Check } from "lucide-react";
+import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const theme = createTheme({
