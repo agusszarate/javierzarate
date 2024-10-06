@@ -32,10 +32,10 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#1565c0",
+      main: "#023269",
     },
     secondary: {
-      main: "#00897b",
+      main: "#11a636",
     },
     background: {
       default: "#f5f5f5",
@@ -62,7 +62,7 @@ const insuranceTypes = [
   {
     title: "Seguro de Hogar",
     icon: <Home />,
-    description: "Protege tu hogar y pertenencias",
+    description: "Protegé tu hogar y pertenencias",
   },
   {
     title: "Seguro de Auto",
@@ -72,12 +72,12 @@ const insuranceTypes = [
   {
     title: "Seguro de Vida",
     icon: <Heart />,
-    description: "Asegura el futuro financiero de tu familia",
+    description: "Asegurá el futuro financiero de tu familia",
   },
   {
     title: "Seguro de Negocios",
     icon: <Briefcase />,
-    description: "Protege las operaciones de tu negocio",
+    description: "Protegé las operaciones de tu negocio",
   },
 ];
 
@@ -85,7 +85,7 @@ const razonesList = [
   "Cobertura personalizada adaptada a tus necesidades",
   "Tarifas competitivas y opciones de pago flexibles",
   "Soporte de reclamaciones 24/7",
-  "Agentes experimentados y conocedores",
+  "Agente experimentado y conocedor",
   "Descuentos disponibles para múltiples pólizas",
 ];
 
@@ -161,7 +161,7 @@ export default function EnhancedInsuranceLandingPage() {
         >
           <Container>
             <Typography variant="h1" component="h1" gutterBottom>
-              Protege lo que más importa
+              PROTEGÉ LO QUE MÁS IMPORTA
             </Typography>
             <Typography variant="h5" component="h2" gutterBottom>
               Soluciones de seguros integrales adaptadas a tus necesidades
@@ -173,7 +173,7 @@ export default function EnhancedInsuranceLandingPage() {
               sx={{ mt: 2 }}
               onClick={() => scrollToAbout("contact-section")}
             >
-              Obtén una Cotización
+              Obtené tu cotización
             </Button>
           </Container>
         </Box>
@@ -185,21 +185,21 @@ export default function EnhancedInsuranceLandingPage() {
               Acerca de Javier Zarate
             </Typography>
             <Typography variant="body1" component="p">
-              Soy Javier Zarate, he estado protegiendo a individuos, familias y
+              Soy Javier Zarate y estuve protegiendo hogares, familias, autos y
               negocios por más de 25 años. Estoy dedicado a encontrar la
-              cobertura adecuada para tus necesidades únicas.
+              cobertura adecuada para tus necesidades.
             </Typography>
             <Typography variant="body1" component="p">
               Me destaco por mi enfoque personalizado, tarifas competitivas y
-              servicio al cliente excepcional. Conmigo, no eres solo un número
-              de póliza, eres parte de una familia.
+              servicio al cliente excepcional. Conmigo, no sos solo un número de
+              póliza, sos parte de una familia.
             </Typography>
           </Box>
 
           {/* Insurance Types Section */}
           <Box sx={{ mb: 8 }} id="services-section">
             <Typography variant="h2" component="h2" gutterBottom>
-              Nuestros Servicios de Seguros
+              Servicios de Seguros
             </Typography>
             <Grid container spacing={4}>
               {insuranceTypes.map((type, index) => (
@@ -271,14 +271,14 @@ export default function EnhancedInsuranceLandingPage() {
             <Grid container spacing={4}>
               <Grid size={12}>
                 <Typography variant="body1" component="p">
-                  ¿Listo para asegurar tu tranquilidad? Llena el siguiente
-                  formulario rápido y me pondre en contacto contigo. Estoy aquí
-                  para responder cualquier pregunta y ayudarte a encontrar la
-                  cobertura perfecta para tus necesidades.
+                  ¿Listo para asegurar tu tranquilidad? Llená el siguiente
+                  formulario rápido y me voy a poner en contacto con vos. Estoy
+                  acá para responder cualquier pregunta y ayudarte a encontrar
+                  la cobertura perfecta para tus necesidades.
                 </Typography>
                 <Typography variant="body1" component="p">
-                  No esperes hasta que sea demasiado tarde. Protege a ti mismo,
-                  a tus seres queridos y tus bienes con Javier Zarate.
+                  ¡No esperes hasta que sea demasiado tarde! Protegete a vos, a
+                  tus seres queridos y tus bienes con Javier Zarate.
                 </Typography>
               </Grid>
               <Grid size={12}>
@@ -356,7 +356,7 @@ export default function EnhancedInsuranceLandingPage() {
                           required
                           fullWidth
                           id="vehicleVersioon"
-                          label="Version del Vehículo"
+                          label="Versión del Vehículo"
                           name="vehicleVersion"
                           autoComplete="vehicle-Version"
                         />
@@ -424,7 +424,7 @@ export default function EnhancedInsuranceLandingPage() {
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Contáctanos
+                  Contactame
                 </Typography>
                 <Typography variant="body2">
                   {/* Calle de los Seguros 123
