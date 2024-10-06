@@ -24,8 +24,10 @@ import {
   Link,
   Grid2 as Grid,
   Fab,
+  IconButton,
+  Drawer,
 } from "@mui/material";
-import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
+import { Home, Car, Briefcase, Heart, Check, MenuIcon } from "lucide-react";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 
 const theme = createTheme({
@@ -88,7 +90,10 @@ const razonesList = [
   "Descuentos disponibles para múltiples pólizas",
 ];
 
+import { useState } from "react";
+
 export default function EnhancedInsuranceLandingPage() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log("Formulario enviado");
@@ -126,28 +131,74 @@ export default function EnhancedInsuranceLandingPage() {
             >
               Javier Zarate
             </Typography>
-            <Button
-              color="inherit"
-              onClick={() => scrollToAbout("services-section")}
-            >
-              Servicios
-            </Button>
-            <Button
-              color="inherit"
-              onClick={() => {
-                scrollToAbout("about-section");
-              }}
-            >
-              Acerca de
-            </Button>
-            <Button
-              color="inherit"
-              onClick={() => scrollToAbout("contact-section")}
-            >
-              Contacto
-            </Button>
+            <Box sx={{ display: { xs: "none", md: "block" } }}>
+              <Button
+                color="inherit"
+                onClick={() => scrollToAbout("services-section")}
+              >
+                Servicios
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => {
+                  scrollToAbout("about-section");
+                }}
+              >
+                Acerca de
+              </Button>
+              <Button
+                color="inherit"
+                onClick={() => scrollToAbout("contact-section")}
+              >
+                Cotizar
+              </Button>
+            </Box>
+            <Box sx={{ display: { xs: "block", md: "none" } }}>
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={() => setMobileOpen(!mobileOpen)}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
+        <Drawer
+          anchor="top"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          sx={{
+            display: { xs: "block", md: "none" },
+          }}
+        >
+          <List
+            sx={{
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
+            }}
+          >
+            <ListItem
+              component="li"
+              sx={{ justifyContent: "center", textAlign: "center" }}
+              onClick={() => scrollToAbout("services-section")}
+            >
+              <ListItemText primary="Servicios" />
+            </ListItem>
+            <ListItem
+              sx={{ justifyContent: "center", textAlign: "center" }}
+              onClick={() => scrollToAbout("about-section")}
+            >
+              <ListItemText primary="Acerca de" />
+            </ListItem>
+            <ListItem
+              sx={{ justifyContent: "center", textAlign: "center" }}
+              onClick={() => scrollToAbout("contact-section")}
+            >
+              <ListItemText primary="Contacto" />
+            </ListItem>
+          </List>
+        </Drawer>
         <Toolbar />
         {/* Hero Section */}
         <Box
