@@ -170,8 +170,9 @@ export default function EnhancedInsuranceLandingPage() {
               color="secondary"
               size="large"
               sx={{ mt: 2 }}
+              onClick={() => scrollToAbout("contact-section")}
             >
-              Obtén una Cotización Gratis
+              Obtén una Cotización
             </Button>
           </Container>
         </Box>
@@ -183,15 +184,14 @@ export default function EnhancedInsuranceLandingPage() {
               Acerca de Javier Zarate
             </Typography>
             <Typography variant="body1" component="p">
-              En Javier Zarate, hemos estado protegiendo a individuos, familias
-              y negocios por más de 25 años. Nuestro equipo de agentes
-              experimentados está dedicado a encontrar la cobertura adecuada
-              para tus necesidades únicas.
+              Soy Javier Zarate, he estado protegiendo a individuos, familias y
+              negocios por más de 25 años. Estoy dedicado a encontrar la
+              cobertura adecuada para tus necesidades únicas.
             </Typography>
             <Typography variant="body1" component="p">
-              Nos enorgullecemos de nuestro enfoque personalizado, tarifas
-              competitivas y servicio al cliente excepcional. Con Javier Zarate,
-              no eres solo un número de póliza, eres parte de nuestra familia.
+              Me destaco por mi enfoque personalizado, tarifas competitivas y
+              servicio al cliente excepcional. Conmigo, no eres solo un número
+              de póliza, eres parte de una familia.
             </Typography>
           </Box>
 
@@ -418,7 +418,7 @@ export default function EnhancedInsuranceLandingPage() {
                   Javier Zarate
                 </Typography>
                 <Typography variant="body2">
-                  Protegiendo lo que más importa desde 1998.
+                  Protegiendo lo que más importa desde 1986.
                 </Typography>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -426,13 +426,13 @@ export default function EnhancedInsuranceLandingPage() {
                   Contáctanos
                 </Typography>
                 <Typography variant="body2">
-                  Calle de los Seguros 123
+                  {/* Calle de los Seguros 123
                   <br />
                   Ciudad Segura, ST 12345
                   <br />
                   (555) 123-4567
-                  <br />
-                  info@safeguardinsurance.com
+                  <br /> */}
+                  javierzarateaseguros@gmail.com
                 </Typography>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -476,9 +476,9 @@ export default function EnhancedInsuranceLandingPage() {
                   <Link href="#" color="inherit" display="block">
                     LinkedIn
                   </Link>
-                  <Link href="#" color="inherit" display="block">
+                  {/* <Link href="#" color="inherit" display="block">
                     Instagram
-                  </Link>
+                  </Link> */}
                 </Typography>
               </Grid>
             </Grid>
