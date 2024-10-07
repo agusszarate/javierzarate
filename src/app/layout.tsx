@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Metadata } from "next";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   title: "Javier Zarate",
   description: "Pagina de Javier Zarate",
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
