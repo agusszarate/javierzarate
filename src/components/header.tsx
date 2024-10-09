@@ -28,7 +28,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
           >
             Javier Zarate
           </Typography>
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
             <Button
               color="inherit"
               onClick={() => {
@@ -44,10 +44,10 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
               Servicios
             </Button>
             <Button color="inherit" onClick={() => scrollTo("contact-section")}>
-              Cotizar
+              Pedir cotizacion
             </Button>
           </Box>
-          <Box sx={{ display: { xs: "block", md: "none" } }}>
+          <Box sx={{ display: { xs: "block", sm: "none" } }}>
             <IconButton
               color="inherit"
               edge="start"
@@ -63,7 +63,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         sx={{
-          display: { xs: "block", md: "none" },
+          display: { xs: "block", sm: "none" },
         }}
       >
         <List
@@ -89,7 +89,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
             sx={{ justifyContent: "center", textAlign: "center" }}
             onClick={() => scrollTo("contact-section")}
           >
-            <ListItemText primary="Contacto" />
+            <ListItemText primary="Pedir cotizacion" />
           </ListItem>
         </List>
       </Drawer>

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Typography,
   Container,
@@ -16,8 +16,9 @@ import {
   Divider,
   Paper,
   Grid2 as Grid,
+  CircularProgress,
 } from "@mui/material";
-import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
+import { Home, Car, Briefcase, Heart, Check, CheckCircle } from "lucide-react";
 
 const insuranceTypes = [
   {
@@ -51,8 +52,12 @@ const razonesList = [
 ];
 
 export default function Body() {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setLoading(true);
     const formData = new FormData(event.currentTarget);
     const fData = {
       name: formData.get("name"),
@@ -83,6 +88,8 @@ export default function Body() {
     Mensaje adicional:
     ${fData.message}
   `;
+
+    console.log(emailBody);
     try {
       const response = await fetch("/api/sendEmail", {
         method: "POST",
@@ -96,16 +103,21 @@ export default function Body() {
         }),
       });
 
-      const data = await response.json();
       if (response.ok) {
-        alert("Correo enviado correctamente");
+        setSuccess(true); // Mostrar mensaje de éxito
+        setTimeout(() => {
+          setSuccess(false); // Ocultar el mensaje después de 3 segundos
+        }, 3000);
       } else {
-        alert(`Error: ${data.message}`);
+        console.error("Error al enviar el correo");
       }
     } catch (error) {
       console.error("Error enviando el correo:", error);
+    } finally {
+      setLoading(false); // Ocultar el spinner o la animación
     }
   };
+
   const scrollToAbout = (sectionName: string) => {
     const sectionId = document.getElementById(sectionName);
     const headerOffset = 94;
@@ -235,25 +247,11 @@ export default function Body() {
           </Typography>
           <Grid container spacing={4}>
             <Grid size={12}>
-              <Typography variant="body1" component="p">
-                ¿Listo para asegurar tu tranquilidad? Llená el siguiente
-                formulario rápido y me voy a poner en contacto con vos. Estoy
-                acá para responder cualquier pregunta y ayudarte a encontrar la
-                cobertura perfecta para tus necesidades.
-              </Typography>
-              <Typography variant="body1" component="p">
-                ¡No esperes hasta que sea demasiado tarde! Protegete a vos, a
-                tus seres queridos y tus bienes con Javier Zarate.
-              </Typography>
-            </Grid>
-            <Grid size={12}>
               <Paper elevation={3} sx={{ p: 3 }}>
                 <Box component="form" onSubmit={handleSubmit} noValidate>
                   <Grid container spacing={2}>
+                    {/* Form Fields */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="h5" component="h2" gutterBottom>
-                        Datos de Contacto
-                      </Typography>
                       <TextField
                         margin="normal"
                         required
@@ -294,9 +292,6 @@ export default function Body() {
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="h5" component="h2" gutterBottom>
-                        Datos para la Cotización
-                      </Typography>
                       <TextField
                         margin="normal"
                         required
@@ -319,7 +314,7 @@ export default function Body() {
                         margin="normal"
                         required
                         fullWidth
-                        id="vehicleVersioon"
+                        id="vehicleVersion"
                         label="Versión del Vehículo"
                         name="vehicleVersion"
                         autoComplete="vehicle-Version"
@@ -343,17 +338,35 @@ export default function Body() {
                         autoComplete="dni"
                       />
                     </Grid>
+
+                    <Button
+                      type="submit"
+                      fullWidth
+                      variant="contained"
+                      color="secondary"
+                      size="large"
+                      sx={{ mt: 3, mb: 2 }}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <CircularProgress color="inherit" size={24} />
+                      ) : success ? (
+                        <CheckCircle size={24} />
+                      ) : (
+                        "Solicitar Cotización"
+                      )}
+                    </Button>
+
+                    {success && (
+                      <Typography
+                        variant="body1"
+                        color="success.main"
+                        sx={{ mt: 2, textAlign: "center" }}
+                      >
+                        Mensaje enviado correctamente
+                      </Typography>
+                    )}
                   </Grid>
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    sx={{ mt: 3, mb: 2 }}
-                  >
-                    Solicitar Cotización
-                  </Button>
                 </Box>
               </Paper>
             </Grid>
