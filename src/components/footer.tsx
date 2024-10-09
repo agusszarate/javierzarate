@@ -102,7 +102,13 @@ const Footer: React.FC<ComponentProps> = ({ scrollTo }) => {
                 Seguime
               </Typography>
               <Typography variant="body2">
-                <Link href="#" color="inherit" display="block">
+                <Link
+                  href="https://www.linkedin.com/in/javier-z%C3%A1rate-b1911a78/"
+                  color="inherit"
+                  display="block"
+                  target="_blank"
+                  sx={{ cursor: "pointer", textDecoration: "none" }}
+                >
                   LinkedIn
                 </Link>
                 {/* <Link href="#" color="inherit" display="block">

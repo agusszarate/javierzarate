@@ -262,7 +262,6 @@ export default function Body() {
                         label="Nombre Completo"
                         name="name"
                         autoComplete="name"
-                        autoFocus
                       />
                       <TextField
                         margin="normal"

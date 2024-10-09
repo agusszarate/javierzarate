@@ -11,7 +11,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu"; // Correct import for MenuIcon
+import { Menu as MenuIcon } from "@mui/icons-material";
 import React, { useState } from "react";
 import { ComponentProps } from "@/app/dto/component.dto";
 
