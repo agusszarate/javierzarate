@@ -21,14 +21,14 @@ import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
 
 const insuranceTypes = [
   {
-    title: "Seguro de Hogar",
-    icon: <Home />,
-    description: "Protegé tu hogar y pertenencias",
-  },
-  {
     title: "Seguro de Auto",
     icon: <Car />,
     description: "Cobertura integral para tus vehículos",
+  },
+  {
+    title: "Seguro de Hogar",
+    icon: <Home />,
+    description: "Protegé tu hogar y pertenencias",
   },
   {
     title: "Seguro de Vida",

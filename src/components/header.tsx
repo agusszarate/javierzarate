@@ -73,17 +73,17 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
           }}
         >
           <ListItem
+            sx={{ justifyContent: "center", textAlign: "center" }}
+            onClick={() => scrollTo("about-section")}
+          >
+            <ListItemText primary="Acerca de" />
+          </ListItem>
+          <ListItem
             component="li"
             sx={{ justifyContent: "center", textAlign: "center" }}
             onClick={() => scrollTo("services-section")}
           >
             <ListItemText primary="Servicios" />
-          </ListItem>
-          <ListItem
-            sx={{ justifyContent: "center", textAlign: "center" }}
-            onClick={() => scrollTo("about-section")}
-          >
-            <ListItemText primary="Acerca de" />
           </ListItem>
           <ListItem
             sx={{ justifyContent: "center", textAlign: "center" }}
