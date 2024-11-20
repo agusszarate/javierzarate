@@ -17,6 +17,10 @@ import {
   Paper,
   Grid2 as Grid,
   CircularProgress,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material";
 import { Home, Car, Briefcase, Heart, Check, CheckCircle } from "lucide-react";
 
@@ -54,6 +58,13 @@ const razonesList = [
 export default function Body() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [quoteType, setQuoteType] = useState<string>("Vehiculo");
+
+  const handleChange = (event: {
+    target: { value: React.SetStateAction<string> };
+  }) => {
+    setQuoteType(event.target.value);
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,25 +82,27 @@ export default function Body() {
       dni: formData.get("dni"),
     };
 
-    const emailBody = `
-    Solicitud de Cotización:
+    const emailBody =
+      `
+    Solicitud de Cotización de ${quoteType}:
 
     Nombre: ${fData.name}
     Email: ${fData.email}
     Teléfono: ${fData.phone}
-    DNI: ${fData.dni}
+    DNI: ${fData.dni}` +
+      (quoteType === "Vehiculo"
+        ? `
     
     Vehículo:
     Marca: ${fData.vehicleMake}
     Modelo: ${fData.vehicleModel}
     Versión: ${fData.vehicleVersion}
-    Año: ${fData.vehicleYear}
-    
+    Año: ${fData.vehicleYear}`
+        : "") +
+      `
     Mensaje adicional:
     ${fData.message}
   `;
-
-    console.log(emailBody);
     try {
       const response = await fetch("/api/sendEmail", {
         method: "POST",
@@ -104,9 +117,9 @@ export default function Body() {
       });
 
       if (response.ok) {
-        setSuccess(true); // Mostrar mensaje de éxito
+        setSuccess(true);
         setTimeout(() => {
-          setSuccess(false); // Ocultar el mensaje después de 3 segundos
+          setSuccess(false);
         }, 3000);
       } else {
         console.error("Error al enviar el correo");
@@ -114,7 +127,7 @@ export default function Body() {
     } catch (error) {
       console.error("Error enviando el correo:", error);
     } finally {
-      setLoading(false); // Ocultar el spinner o la animación
+      setLoading(false);
     }
   };
 
@@ -251,7 +264,26 @@ export default function Body() {
                 <Box component="form" onSubmit={handleSubmit} noValidate>
                   <Grid container spacing={2}>
                     {/* Form Fields */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="demo-simple-select-label">
+                        Tipo de cotizacion
+                      </InputLabel>
+                      <Select
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        value={quoteType}
+                        label="quoteType"
+                        onChange={handleChange}
+                      >
+                        <MenuItem value={"Vehiculo"}>Vehiculo</MenuItem>
+                        <MenuItem value={"Hogar"}>Hogar</MenuItem>
+                        <MenuItem value={"Vida"}>Vida</MenuItem>
+                        <MenuItem value={"Negocios"}>Negocio</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Grid
+                      size={{ xs: 12, md: quoteType == "Vehiculo" ? 6 : 12 }}
+                    >
                       <TextField
                         margin="normal"
                         required
@@ -290,54 +322,55 @@ export default function Body() {
                         rows={4.5}
                       />
                     </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="vehicleMake"
-                        label="Marca del Vehículo"
-                        name="vehicleMake"
-                        autoComplete="vehicle-make"
-                      />
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="vehicleModel"
-                        label="Modelo del Vehículo"
-                        name="vehicleModel"
-                        autoComplete="vehicle-model"
-                      />
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="vehicleVersion"
-                        label="Versión del Vehículo"
-                        name="vehicleVersion"
-                        autoComplete="vehicle-Version"
-                      />
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="vehicleYear"
-                        label="Año del Vehículo"
-                        name="vehicleYear"
-                        autoComplete="vehicle-year"
-                      />
-                      <TextField
-                        margin="normal"
-                        required
-                        fullWidth
-                        id="dni"
-                        label="DNI del propietario"
-                        name="dni"
-                        autoComplete="dni"
-                      />
-                    </Grid>
+                    {quoteType === "Vehiculo" && (
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                          margin="normal"
+                          required
+                          fullWidth
+                          id="vehicleMake"
+                          label="Marca del Vehículo"
+                          name="vehicleMake"
+                          autoComplete="vehicle-make"
+                        />
+                        <TextField
+                          margin="normal"
+                          required
+                          fullWidth
+                          id="vehicleModel"
+                          label="Modelo del Vehículo"
+                          name="vehicleModel"
+                          autoComplete="vehicle-model"
+                        />
+                        <TextField
+                          margin="normal"
+                          required
+                          fullWidth
+                          id="vehicleVersion"
+                          label="Versión del Vehículo"
+                          name="vehicleVersion"
+                          autoComplete="vehicle-Version"
+                        />
+                        <TextField
+                          margin="normal"
+                          required
+                          fullWidth
+                          id="vehicleYear"
+                          label="Año del Vehículo"
+                          name="vehicleYear"
+                          autoComplete="vehicle-year"
+                        />
+                        <TextField
+                          margin="normal"
+                          required
+                          fullWidth
+                          id="dni"
+                          label="DNI del propietario"
+                          name="dni"
+                          autoComplete="dni"
+                        />
+                      </Grid>
+                    )}
 
                     <Button
                       type="submit"
