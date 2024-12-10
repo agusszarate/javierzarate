@@ -113,7 +113,7 @@ const Form = () => {
     getMarcas();
   }, []);
 
-  const fetchData = async (url: string, setData: (data: any) => void) => {
+  const fetchData = async (url: string, voidType: string) => {
     try {
       const response = await fetch(url, {
         method: "GET",
@@ -127,26 +127,28 @@ const Form = () => {
       }
 
       const data = await response.json();
-      setData(data);
+
+      if (voidType === "marcas") setMarcas(data);
+      else if (voidType === "modelos") setModelos(data.modelos);
+      else if (voidType === "años") setAños(data);
+      else console.error("Invalid voidType:", voidType);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
 
   const getMarcas = () => {
-    fetchData(`${vehicleAPI}/marcas`, setMarcas);
+    fetchData(`${vehicleAPI}/marcas`, "marcas");
   };
 
   const getModelos = (idMarca: string) => {
-    fetchData(`${vehicleAPI}/marcas/${idMarca}/modelos`, (data) =>
-      setModelos(data.modelos)
-    );
+    fetchData(`${vehicleAPI}/marcas/${idMarca}/modelos`, "modelos");
   };
 
   const getAños = (idModelo: string) => {
     fetchData(
       `${vehicleAPI}/marcas/${marca.codigo}/modelos/${idModelo}/anos`,
-      (data) => setAños(data)
+      "años"
     );
   };
 
