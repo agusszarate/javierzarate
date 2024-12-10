@@ -113,10 +113,7 @@ const Form = () => {
     getMarcas();
   }, []);
 
-  const fetchData = async (
-    url: string,
-    setData: React.Dispatch<React.SetStateAction<any>>
-  ) => {
+  const fetchData = async (url: string, setData: (data: any) => void) => {
     try {
       const response = await fetch(url, {
         method: "GET",

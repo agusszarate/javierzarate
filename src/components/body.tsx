@@ -1,9 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import {
   Typography,
   Container,
-  TextField,
   Button,
   Box,
   Card,
@@ -16,13 +15,8 @@ import {
   Divider,
   Paper,
   Grid2 as Grid,
-  CircularProgress,
-  FormControl,
-  Select,
-  MenuItem,
-  InputLabel,
 } from "@mui/material";
-import { Home, Car, Briefcase, Heart, Check, CheckCircle } from "lucide-react";
+import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
 import Form from "./form";
 
 const insuranceTypes = [
