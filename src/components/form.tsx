@@ -125,7 +125,6 @@ const Form = () => {
                             formData: fData,
                         }),
                     })
-                    console.log('Datos guardados en Google Sheets')
                 } catch (sheetsError) {
                     console.error('Error guardando en Google Sheets:', sheetsError)
                     // No interrumpimos el flujo si falla Google Sheets
@@ -148,14 +147,12 @@ const Form = () => {
     useEffect(() => {
         getMarcas()
         if (quoteType === 'Activar_app') {
-            console.log('🔍 Cargando marcas de Activar_app...')
             getActivarMarcas()
         }
     }, [quoteType])
 
     const fetchData = async (url: string, voidType: string) => {
         try {
-            console.log(`🌐 Fetching: ${url} for ${voidType}`)
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -168,13 +165,11 @@ const Form = () => {
             }
 
             const data = await response.json()
-            console.log(`✅ Data received for ${voidType}:`, data)
 
             if (voidType === 'marcas') setMarcas(data)
             else if (voidType === 'modelos') setModelos(data.modelos)
             else if (voidType === 'años') setAños(data)
             else if (voidType === 'activarMarcas') {
-                console.log('🏷️ Setting Activar marcas:', data)
                 setActivarMarcas(data)
             } else if (voidType === 'activarModelos') setActivarModelos(data)
             else if (voidType === 'activarYears') setActivarYears(data)
@@ -241,7 +236,6 @@ const Form = () => {
             if (response.ok) {
                 const quoteData = await response.json()
                 // La API devuelve {data: {garage: {...}, on_off: [...]}}
-                console.log('Quote response:', quoteData)
                 setQuoteResult(quoteData.data || quoteData) // Extraer data si existe
                 setShowQuote(true)
 
