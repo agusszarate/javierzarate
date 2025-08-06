@@ -150,35 +150,6 @@ const ensureSheetExists = async (sheets: any, spreadsheetId: string, sheetName: 
 export async function POST(req: NextRequest) {
     try {
         const { quoteType, formData } = await req.json()
-
-        // Debug: Verificar variables de entorno
-        console.log('🔍 Debug - Variables de entorno:')
-        console.log(
-            'GOOGLE_PROJECT_ID:',
-            process.env.GOOGLE_PROJECT_ID ? '✅ Configurado' : '❌ No configurado'
-        )
-        console.log(
-            'GOOGLE_CLIENT_EMAIL:',
-            process.env.GOOGLE_CLIENT_EMAIL ? '✅ Configurado' : '❌ No configurado'
-        )
-        console.log(
-            'GOOGLE_PRIVATE_KEY:',
-            process.env.GOOGLE_PRIVATE_KEY
-                ? `✅ Configurado (${process.env.GOOGLE_PRIVATE_KEY.length} chars)`
-                : '❌ No configurado'
-        )
-        console.log(
-            'GOOGLE_SHEET_ID:',
-            process.env.GOOGLE_SHEET_ID ? '✅ Configurado' : '❌ No configurado'
-        )
-
-        // Debug valores específicos (sin exponer la clave privada)
-        console.log('🔍 Valores específicos:')
-        console.log('PROJECT_ID:', process.env.GOOGLE_PROJECT_ID)
-        console.log('CLIENT_EMAIL:', process.env.GOOGLE_CLIENT_EMAIL)
-        console.log('SHEET_ID:', process.env.GOOGLE_SHEET_ID)
-        console.log('PRIVATE_KEY inicia con:', process.env.GOOGLE_PRIVATE_KEY?.substring(0, 50))
-
         const sheets = getGoogleSheetsClient()
         const spreadsheetId = process.env.GOOGLE_SHEET_ID
 

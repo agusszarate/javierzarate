@@ -737,120 +737,117 @@ const Form = () => {
                                                         <Typography variant="h6" sx={{ mb: 2 }}>
                                                             🛡️ Opciones de Cobertura On-Off:
                                                         </Typography>
-                                                        {quoteResult.on_off.map(
-                                                            (option: any, index: number) => (
-                                                                <Paper
-                                                                    key={option.coverage}
-                                                                    elevation={1}
+                                                        {quoteResult.on_off.map((option: any) => (
+                                                            <Paper
+                                                                key={option.coverage}
+                                                                elevation={1}
+                                                                sx={{
+                                                                    p: 2,
+                                                                    mb: 2,
+                                                                    border: option.recommended
+                                                                        ? '2px solid #4caf50'
+                                                                        : '1px solid #e0e0e0',
+                                                                    backgroundColor:
+                                                                        option.recommended
+                                                                            ? '#f1f8e9'
+                                                                            : 'white',
+                                                                }}
+                                                            >
+                                                                <Box
                                                                     sx={{
-                                                                        p: 2,
-                                                                        mb: 2,
-                                                                        border: option.recommended
-                                                                            ? '2px solid #4caf50'
-                                                                            : '1px solid #e0e0e0',
-                                                                        backgroundColor:
-                                                                            option.recommended
-                                                                                ? '#f1f8e9'
-                                                                                : 'white',
+                                                                        display: 'flex',
+                                                                        justifyContent:
+                                                                            'space-between',
+                                                                        alignItems: 'flex-start',
+                                                                        mb: 1,
                                                                     }}
                                                                 >
-                                                                    <Box
-                                                                        sx={{
-                                                                            display: 'flex',
-                                                                            justifyContent:
-                                                                                'space-between',
-                                                                            alignItems:
-                                                                                'flex-start',
-                                                                            mb: 1,
-                                                                        }}
-                                                                    >
-                                                                        <Box>
-                                                                            <Typography
-                                                                                variant="h6"
-                                                                                color={
-                                                                                    option.recommended
-                                                                                        ? 'success.main'
-                                                                                        : 'text.primary'
-                                                                                }
-                                                                            >
-                                                                                Cobertura{' '}
-                                                                                {option.coverage}
-                                                                                {option.recommended &&
-                                                                                    ' ⭐ Recomendada'}
-                                                                            </Typography>
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                color="text.secondary"
-                                                                                sx={{ mb: 1 }}
-                                                                            >
-                                                                                {option.description}
-                                                                            </Typography>
-                                                                        </Box>
+                                                                    <Box>
                                                                         <Typography
-                                                                            variant="h5"
-                                                                            color="primary"
-                                                                            sx={{
-                                                                                fontWeight: 'bold',
-                                                                            }}
+                                                                            variant="h6"
+                                                                            color={
+                                                                                option.recommended
+                                                                                    ? 'success.main'
+                                                                                    : 'text.primary'
+                                                                            }
                                                                         >
-                                                                            ${option.premio}
+                                                                            Cobertura{' '}
+                                                                            {option.coverage}
+                                                                            {option.recommended &&
+                                                                                ' ⭐ Recomendada'}
+                                                                        </Typography>
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            color="text.secondary"
+                                                                            sx={{ mb: 1 }}
+                                                                        >
+                                                                            {option.description}
                                                                         </Typography>
                                                                     </Box>
-
                                                                     <Typography
-                                                                        variant="body2"
-                                                                        sx={{ mb: 1 }}
+                                                                        variant="h5"
+                                                                        color="primary"
+                                                                        sx={{
+                                                                            fontWeight: 'bold',
+                                                                        }}
                                                                     >
-                                                                        <strong>
-                                                                            Responsabilidad Civil:
-                                                                        </strong>{' '}
-                                                                        $
-                                                                        {option.responsabilidad_civil?.toLocaleString()}
+                                                                        ${option.premio}
                                                                     </Typography>
+                                                                </Box>
 
-                                                                    {option.items &&
-                                                                        option.items.length > 0 && (
-                                                                            <Box>
-                                                                                <Typography
-                                                                                    variant="body2"
-                                                                                    sx={{
-                                                                                        fontWeight:
-                                                                                            'bold',
-                                                                                        mb: 0.5,
-                                                                                    }}
-                                                                                >
-                                                                                    Incluye:
-                                                                                </Typography>
-                                                                                <ul
-                                                                                    style={{
-                                                                                        margin: 0,
-                                                                                        paddingLeft: 20,
-                                                                                    }}
-                                                                                >
-                                                                                    {option.items.map(
-                                                                                        (
-                                                                                            item: string,
-                                                                                            itemIndex: number
-                                                                                        ) => (
-                                                                                            <li
-                                                                                                key={
-                                                                                                    itemIndex
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{ mb: 1 }}
+                                                                >
+                                                                    <strong>
+                                                                        Responsabilidad Civil:
+                                                                    </strong>{' '}
+                                                                    $
+                                                                    {option.responsabilidad_civil?.toLocaleString()}
+                                                                </Typography>
+
+                                                                {option.items &&
+                                                                    option.items.length > 0 && (
+                                                                        <Box>
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                sx={{
+                                                                                    fontWeight:
+                                                                                        'bold',
+                                                                                    mb: 0.5,
+                                                                                }}
+                                                                            >
+                                                                                Incluye:
+                                                                            </Typography>
+                                                                            <ul
+                                                                                style={{
+                                                                                    margin: 0,
+                                                                                    paddingLeft: 20,
+                                                                                }}
+                                                                            >
+                                                                                {option.items.map(
+                                                                                    (
+                                                                                        item: string,
+                                                                                        itemIndex: number
+                                                                                    ) => (
+                                                                                        <li
+                                                                                            key={
+                                                                                                itemIndex
+                                                                                            }
+                                                                                        >
+                                                                                            <Typography variant="body2">
+                                                                                                {
+                                                                                                    item
                                                                                                 }
-                                                                                            >
-                                                                                                <Typography variant="body2">
-                                                                                                    {
-                                                                                                        item
-                                                                                                    }
-                                                                                                </Typography>
-                                                                                            </li>
-                                                                                        )
-                                                                                    )}
-                                                                                </ul>
-                                                                            </Box>
-                                                                        )}
-                                                                </Paper>
-                                                            )
-                                                        )}
+                                                                                            </Typography>
+                                                                                        </li>
+                                                                                    )
+                                                                                )}
+                                                                            </ul>
+                                                                        </Box>
+                                                                    )}
+                                                            </Paper>
+                                                        ))}
                                                     </>
                                                 )}
 
