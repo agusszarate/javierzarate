@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Forzar renderizado dinámico
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
     try {
         const quoteData = await req.json()

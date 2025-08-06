@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
 
+// Forzar renderizado dinámico
+export const dynamic = 'force-dynamic'
+
 // Configuración de Google Sheets (reutilizando la misma función)
 const getGoogleSheetsClient = () => {
     if (

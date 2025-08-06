@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Forzar renderizado dinámico
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url)
-        const modelCode = searchParams.get('modelCode')
+        const modelCode = req.nextUrl.searchParams.get('modelCode')
 
         if (!modelCode) {
             return NextResponse.json({ error: 'Model code is required' }, { status: 400 })
