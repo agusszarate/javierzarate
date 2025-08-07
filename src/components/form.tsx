@@ -13,8 +13,10 @@ import {
     CircularProgress,
 } from '@mui/material'
 import { CheckCircle } from 'lucide-react'
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
 
 const Form = () => {
+    const formAnimation = useScrollAnimation(0.1);
     const vehicleAPI = process.env.NEXT_PUBLIC_vehiclesAPI
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -344,13 +346,28 @@ const Form = () => {
     }
 
     return (
-        <Box sx={{ mb: 8 }}>
+        <Box 
+            ref={formAnimation.ref}
+            className={`fade-in ${formAnimation.isVisible ? 'visible' : ''}`}
+            sx={{ mb: 8 }}
+        >
             <Typography variant="h2" component="h2" gutterBottom id={'contact-section'}>
                 Solicitar cotización
             </Typography>
             <Grid container spacing={4}>
                 <Grid size={12}>
-                    <Paper elevation={3} sx={{ p: 3 }}>
+                    <Paper 
+                        elevation={3} 
+                        sx={{ 
+                            p: 3,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                boxShadow: 6,
+                                transform: 'translateY(-2px)',
+                            }
+                        }}
+                        className={`scale-in delay-1 ${formAnimation.isVisible ? 'visible' : ''}`}
+                    >
                         <Box component="form" onSubmit={handleSubmit} noValidate>
                             <Grid container spacing={2}>
                                 {/* Form Fields */}
@@ -391,6 +408,19 @@ const Form = () => {
                                         label="Nombre Completo"
                                         name="name"
                                         autoComplete="name"
+                                        className={`fade-in delay-2 ${formAnimation.isVisible ? 'visible' : ''}`}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                },
+                                                '&.Mui-focused': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                }
+                                            }
+                                        }}
                                     />
                                     <TextField
                                         margin="normal"
@@ -400,6 +430,19 @@ const Form = () => {
                                         label="Correo Electrónico"
                                         name="email"
                                         autoComplete="email"
+                                        className={`fade-in delay-3 ${formAnimation.isVisible ? 'visible' : ''}`}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                },
+                                                '&.Mui-focused': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                }
+                                            }
+                                        }}
                                     />
                                     <TextField
                                         margin="normal"
@@ -410,6 +453,19 @@ const Form = () => {
                                         type="tel"
                                         id="phone"
                                         autoComplete="tel"
+                                        className={`fade-in delay-4 ${formAnimation.isVisible ? 'visible' : ''}`}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                },
+                                                '&.Mui-focused': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                }
+                                            }
+                                        }}
                                     />
                                     <TextField
                                         margin="normal"
@@ -419,6 +475,19 @@ const Form = () => {
                                         id="message"
                                         multiline
                                         rows={4.5}
+                                        className={`fade-in delay-5 ${formAnimation.isVisible ? 'visible' : ''}`}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-1px)',
+                                                },
+                                                '&.Mui-focused': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                }
+                                            }
+                                        }}
                                     />
                                 </Grid>
                                 {quoteType === 'Vehiculo' && (
@@ -956,13 +1025,31 @@ const Form = () => {
                                         variant="contained"
                                         color="secondary"
                                         size="large"
-                                        sx={{ mt: 3, mb: 2 }}
+                                        sx={{ 
+                                            mt: 3, 
+                                            mb: 2,
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            '&:hover': {
+                                                transform: 'translateY(-3px) scale(1.02)',
+                                                boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                                            },
+                                            '&:active': {
+                                                transform: 'translateY(-1px)',
+                                            }
+                                        }}
+                                        className={`scale-in delay-5 ${formAnimation.isVisible ? 'visible' : ''}`}
                                         disabled={loading}
                                     >
                                         {loading ? (
-                                            <CircularProgress color="inherit" size={24} />
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <CircularProgress color="inherit" size={24} />
+                                                <span>Enviando...</span>
+                                            </Box>
                                         ) : success ? (
-                                            <CheckCircle size={24} />
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <CheckCircle size={24} />
+                                                <span>¡Enviado!</span>
+                                            </Box>
                                         ) : (
                                             'Solicitar Cotización'
                                         )}
@@ -973,9 +1060,19 @@ const Form = () => {
                                     <Typography
                                         variant="body1"
                                         color="success.main"
-                                        sx={{ mt: 2, textAlign: 'center' }}
+                                        className={`fade-in ${success ? 'visible' : ''}`}
+                                        sx={{ 
+                                            mt: 2, 
+                                            textAlign: 'center',
+                                            animation: 'pulse 1.5s ease-in-out infinite',
+                                            '@keyframes pulse': {
+                                                '0%': { transform: 'scale(1)' },
+                                                '50%': { transform: 'scale(1.05)' },
+                                                '100%': { transform: 'scale(1)' },
+                                            }
+                                        }}
                                     >
-                                        Mensaje enviado correctamente
+                                        ✅ Mensaje enviado correctamente
                                     </Typography>
                                 )}
                             </Grid>
