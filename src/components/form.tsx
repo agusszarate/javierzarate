@@ -11,12 +11,14 @@ import {
     TextField,
     Button,
     CircularProgress,
+    Grow,
+    Fade,
 } from '@mui/material'
 import { CheckCircle } from 'lucide-react'
 import { useScrollAnimation } from "@/hooks/useScrollAnimation"
 
 const Form = () => {
-    const formAnimation = useScrollAnimation(0.1);
+    const formAnimation = useScrollAnimation(0.1, 500);
     const vehicleAPI = process.env.NEXT_PUBLIC_vehiclesAPI
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -348,26 +350,27 @@ const Form = () => {
     return (
         <Box 
             ref={formAnimation.ref}
-            className={`fade-in ${formAnimation.isVisible ? 'visible' : ''}`}
             sx={{ mb: 8 }}
         >
-            <Typography variant="h2" component="h2" gutterBottom id={'contact-section'}>
-                Solicitar cotización
-            </Typography>
+            <Fade in={formAnimation.inView} timeout={600}>
+                <Typography variant="h2" component="h2" gutterBottom id={'contact-section'}>
+                    Solicitar cotización
+                </Typography>
+            </Fade>
             <Grid container spacing={4}>
                 <Grid size={12}>
-                    <Paper 
-                        elevation={3} 
-                        sx={{ 
-                            p: 3,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                boxShadow: 6,
-                                transform: 'translateY(-2px)',
-                            }
-                        }}
-                        className={`scale-in delay-1 ${formAnimation.isVisible ? 'visible' : ''}`}
-                    >
+                    <Grow in={formAnimation.inView} timeout={800} style={{ transitionDelay: '200ms' }}>
+                        <Paper 
+                            elevation={3} 
+                            sx={{ 
+                                p: 3,
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '&:hover': {
+                                    boxShadow: 8,
+                                    transform: 'translateY(-4px)',
+                                }
+                            }}
+                        >
                         <Box component="form" onSubmit={handleSubmit} noValidate>
                             <Grid container spacing={2}>
                                 {/* Form Fields */}
@@ -400,95 +403,99 @@ const Form = () => {
                                                 : 12,
                                     }}
                                 >
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        fullWidth
-                                        id="name"
-                                        label="Nombre Completo"
-                                        name="name"
-                                        autoComplete="name"
-                                        className={`fade-in delay-2 ${formAnimation.isVisible ? 'visible' : ''}`}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                transition: 'all 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                },
-                                                '&.Mui-focused': {
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                    <Fade in={formAnimation.inView} timeout={600} style={{ transitionDelay: '400ms' }}>
+                                        <TextField
+                                            margin="normal"
+                                            required
+                                            fullWidth
+                                            id="name"
+                                            label="Nombre Completo"
+                                            name="name"
+                                            autoComplete="name"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                    />
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        fullWidth
-                                        id="email"
-                                        label="Correo Electrónico"
-                                        name="email"
-                                        autoComplete="email"
-                                        className={`fade-in delay-3 ${formAnimation.isVisible ? 'visible' : ''}`}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                transition: 'all 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                },
-                                                '&.Mui-focused': {
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                            }}
+                                        />
+                                    </Fade>
+                                    <Fade in={formAnimation.inView} timeout={600} style={{ transitionDelay: '500ms' }}>
+                                        <TextField
+                                            margin="normal"
+                                            required
+                                            fullWidth
+                                            id="email"
+                                            label="Correo Electrónico"
+                                            name="email"
+                                            autoComplete="email"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                    />
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        fullWidth
-                                        name="phone"
-                                        label="Número de Teléfono"
-                                        type="tel"
-                                        id="phone"
-                                        autoComplete="tel"
-                                        className={`fade-in delay-4 ${formAnimation.isVisible ? 'visible' : ''}`}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                transition: 'all 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                },
-                                                '&.Mui-focused': {
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                            }}
+                                        />
+                                    </Fade>
+                                    <Fade in={formAnimation.inView} timeout={600} style={{ transitionDelay: '600ms' }}>
+                                        <TextField
+                                            margin="normal"
+                                            required
+                                            fullWidth
+                                            name="phone"
+                                            label="Número de Teléfono"
+                                            type="tel"
+                                            id="phone"
+                                            autoComplete="tel"
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                    />
-                                    <TextField
-                                        margin="normal"
-                                        fullWidth
-                                        name="message"
-                                        label="Mensaje (Opcional)"
-                                        id="message"
-                                        multiline
-                                        rows={4.5}
-                                        className={`fade-in delay-5 ${formAnimation.isVisible ? 'visible' : ''}`}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                transition: 'all 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-1px)',
-                                                },
-                                                '&.Mui-focused': {
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                            }}
+                                        />
+                                    </Fade>
+                                    <Fade in={formAnimation.inView} timeout={600} style={{ transitionDelay: '700ms' }}>
+                                        <TextField
+                                            margin="normal"
+                                            fullWidth
+                                            name="message"
+                                            label="Mensaje (Opcional)"
+                                            id="message"
+                                            multiline
+                                            rows={4.5}
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-1px)',
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                    />
+                                            }}
+                                        />
+                                    </Fade>
                                 </Grid>
                                 {quoteType === 'Vehiculo' && (
                                     <Grid size={{ xs: 12, md: 6 }}>
@@ -1019,65 +1026,68 @@ const Form = () => {
                                 )}
 
                                 {quoteType !== 'Activar_app' && (
-                                    <Button
-                                        type="submit"
-                                        fullWidth
-                                        variant="contained"
-                                        color="secondary"
-                                        size="large"
-                                        sx={{ 
-                                            mt: 3, 
-                                            mb: 2,
-                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            '&:hover': {
-                                                transform: 'translateY(-3px) scale(1.02)',
-                                                boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                                            },
-                                            '&:active': {
-                                                transform: 'translateY(-1px)',
-                                            }
-                                        }}
-                                        className={`scale-in delay-5 ${formAnimation.isVisible ? 'visible' : ''}`}
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <CircularProgress color="inherit" size={24} />
-                                                <span>Enviando...</span>
-                                            </Box>
-                                        ) : success ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <CheckCircle size={24} />
-                                                <span>¡Enviado!</span>
-                                            </Box>
-                                        ) : (
-                                            'Solicitar Cotización'
-                                        )}
-                                    </Button>
+                                    <Fade in={formAnimation.inView} timeout={600} style={{ transitionDelay: '800ms' }}>
+                                        <Button
+                                            type="submit"
+                                            fullWidth
+                                            variant="contained"
+                                            color="secondary"
+                                            size="large"
+                                            sx={{ 
+                                                mt: 3, 
+                                                mb: 2,
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                '&:hover': {
+                                                    transform: 'translateY(-3px) scale(1.02)',
+                                                    boxShadow: 8,
+                                                },
+                                                '&:active': {
+                                                    transform: 'translateY(-1px)',
+                                                }
+                                            }}
+                                            disabled={loading}
+                                        >
+                                            {loading ? (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <CircularProgress color="inherit" size={24} />
+                                                    <span>Enviando...</span>
+                                                </Box>
+                                            ) : success ? (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <CheckCircle size={24} />
+                                                    <span>¡Enviado!</span>
+                                                </Box>
+                                            ) : (
+                                                'Solicitar Cotización'
+                                            )}
+                                        </Button>
+                                    </Fade>
                                 )}
 
                                 {success && (
-                                    <Typography
-                                        variant="body1"
-                                        color="success.main"
-                                        className={`fade-in ${success ? 'visible' : ''}`}
-                                        sx={{ 
-                                            mt: 2, 
-                                            textAlign: 'center',
-                                            animation: 'pulse 1.5s ease-in-out infinite',
-                                            '@keyframes pulse': {
-                                                '0%': { transform: 'scale(1)' },
-                                                '50%': { transform: 'scale(1.05)' },
-                                                '100%': { transform: 'scale(1)' },
-                                            }
-                                        }}
-                                    >
-                                        ✅ Mensaje enviado correctamente
-                                    </Typography>
+                                    <Fade in={success} timeout={800}>
+                                        <Typography
+                                            variant="body1"
+                                            color="success.main"
+                                            sx={{ 
+                                                mt: 2, 
+                                                textAlign: 'center',
+                                                '@keyframes pulse': {
+                                                    '0%': { transform: 'scale(1)' },
+                                                    '50%': { transform: 'scale(1.05)' },
+                                                    '100%': { transform: 'scale(1)' },
+                                                },
+                                                animation: 'pulse 1.5s ease-in-out infinite',
+                                            }}
+                                        >
+                                            ✅ Mensaje enviado correctamente
+                                        </Typography>
+                                    </Fade>
                                 )}
                             </Grid>
                         </Box>
                     </Paper>
+                </Grow>
                 </Grid>
             </Grid>
         </Box>

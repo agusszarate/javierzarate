@@ -10,6 +10,7 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  Slide,
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
 import React, { useState } from "react";
@@ -27,7 +28,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
             sx={{ 
               flexGrow: 1, 
               fontWeight: "bold",
-              transition: 'all 0.3s ease',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 transform: 'scale(1.05)',
               }
@@ -39,7 +40,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
             <Button
               color="inherit"
               sx={{
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   transform: 'translateY(-2px)',
@@ -54,7 +55,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
             <Button
               color="inherit"
               sx={{
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   transform: 'translateY(-2px)',
@@ -67,7 +68,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
             <Button 
               color="inherit" 
               sx={{
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   transform: 'translateY(-2px)',
@@ -83,7 +84,7 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
               color="inherit"
               edge="start"
               sx={{
-                transition: 'all 0.3s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   transform: 'rotate(90deg)',
@@ -102,71 +103,72 @@ const Header: React.FC<ComponentProps> = ({ scrollTo }) => {
         onClose={() => setMobileOpen(false)}
         sx={{
           display: { xs: "block", sm: "none" },
-          '& .MuiDrawer-paper': {
-            transform: mobileOpen ? 'translateY(0)' : 'translateY(-100%)',
-            transition: 'transform 0.3s ease-in-out',
-          }
+        }}
+        SlideProps={{
+          direction: "down"
         }}
       >
-        <List
-          sx={{
-            backgroundColor: "primary.main",
-            color: "primary.contrastText",
-          }}
-        >
-          <ListItem
-            sx={{ 
-              justifyContent: "center", 
-              textAlign: "center",
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                transform: 'scale(1.05)',
-              }
-            }}
-            onClick={() => {
-              scrollTo("about-section");
-              setMobileOpen(false);
+        <Slide direction="down" in={mobileOpen} mountOnEnter unmountOnExit>
+          <List
+            sx={{
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
             }}
           >
-            <ListItemText primary="Acerca de" />
-          </ListItem>
-          <ListItem
-            component="li"
-            sx={{ 
-              justifyContent: "center", 
-              textAlign: "center",
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                transform: 'scale(1.05)',
-              }
-            }}
-            onClick={() => {
-              scrollTo("services-section");
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemText primary="Servicios" />
-          </ListItem>
-          <ListItem
-            sx={{ 
-              justifyContent: "center", 
-              textAlign: "center",
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                transform: 'scale(1.05)',
-              }
-            }}
-            onClick={() => {
-              scrollTo("contact-section");
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemText primary="Pedir cotizacion" />
-          </ListItem>
-        </List>
+            <ListItem
+              sx={{ 
+                justifyContent: "center", 
+                textAlign: "center",
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'scale(1.05)',
+                }
+              }}
+              onClick={() => {
+                scrollTo("about-section");
+                setMobileOpen(false);
+              }}
+            >
+              <ListItemText primary="Acerca de" />
+            </ListItem>
+            <ListItem
+              component="li"
+              sx={{ 
+                justifyContent: "center", 
+                textAlign: "center",
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'scale(1.05)',
+                }
+              }}
+              onClick={() => {
+                scrollTo("services-section");
+                setMobileOpen(false);
+              }}
+            >
+              <ListItemText primary="Servicios" />
+            </ListItem>
+            <ListItem
+              sx={{ 
+                justifyContent: "center", 
+                textAlign: "center",
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'scale(1.05)',
+                }
+              }}
+              onClick={() => {
+                scrollTo("contact-section");
+                setMobileOpen(false);
+              }}
+            >
+              <ListItemText primary="Pedir cotizacion" />
+            </ListItem>
+          </List>
+        </Slide>
       </Drawer>
       <Toolbar />
     </>

@@ -15,6 +15,10 @@ import {
   Divider,
   Paper,
   Grid2 as Grid,
+  Grow,
+  Fade,
+  Slide,
+  Zoom,
 } from "@mui/material";
 import { Home, Car, Briefcase, Heart, Check } from "lucide-react";
 import Form from "./form";
@@ -52,10 +56,10 @@ const razonesList = [
 ];
 
 export default function Body() {
-  const heroAnimation = useScrollAnimation(0.1);
-  const aboutAnimation = useScrollAnimation(0.1);
-  const whyChooseAnimation = useScrollAnimation(0.1);
-  const servicesAnimation = useScrollAnimation(0.1);
+  const heroAnimation = useScrollAnimation(0.1, 100);
+  const aboutAnimation = useScrollAnimation(0.1, 200);
+  const whyChooseAnimation = useScrollAnimation(0.1, 300);
+  const servicesAnimation = useScrollAnimation(0.1, 400);
 
   const scrollToAbout = (sectionName: string) => {
     const sectionId = document.getElementById(sectionName);
@@ -74,7 +78,6 @@ export default function Body() {
       {/* Hero Section */}
       <Box
         ref={heroAnimation.ref}
-        className={`fade-in ${heroAnimation.isVisible ? 'visible' : ''}`}
         sx={{
           bgcolor: "primary.main",
           color: "primary.contrastText",
@@ -83,39 +86,34 @@ export default function Body() {
         }}
       >
         <Container>
-          <Typography 
-            variant="h1" 
-            component="h1" 
-            gutterBottom
-            className={`fade-in delay-1 ${heroAnimation.isVisible ? 'visible' : ''}`}
-          >
-            PROTEGÉ LO QUE MÁS IMPORTA
-          </Typography>
-          <Typography 
-            variant="h5" 
-            component="h2" 
-            gutterBottom
-            className={`fade-in delay-2 ${heroAnimation.isVisible ? 'visible' : ''}`}
-          >
-            Soluciones de seguros integrales adaptadas a tus necesidades
-          </Typography>
-          <Button
-            variant="contained"
-            color="secondary"
-            size="large"
-            className={`scale-in delay-3 ${heroAnimation.isVisible ? 'visible' : ''}`}
-            sx={{ 
-              mt: 2,
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'scale(1.05)',
-                boxShadow: 3,
-              }
-            }}
-            onClick={() => scrollToAbout("contact-section")}
-          >
-            Obtené tu cotización
-          </Button>
+          <Fade in={heroAnimation.inView} timeout={600}>
+            <Typography variant="h1" component="h1" gutterBottom>
+              PROTEGÉ LO QUE MÁS IMPORTA
+            </Typography>
+          </Fade>
+          <Fade in={heroAnimation.inView} timeout={800} style={{ transitionDelay: '200ms' }}>
+            <Typography variant="h5" component="h2" gutterBottom>
+              Soluciones de seguros integrales adaptadas a tus necesidades
+            </Typography>
+          </Fade>
+          <Zoom in={heroAnimation.inView} timeout={600} style={{ transitionDelay: '400ms' }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="large"
+              sx={{ 
+                mt: 2,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  boxShadow: 6,
+                }
+              }}
+              onClick={() => scrollToAbout("contact-section")}
+            >
+              Obtené tu cotización
+            </Button>
+          </Zoom>
         </Container>
       </Box>
       {/* Main Content */}
@@ -123,123 +121,135 @@ export default function Body() {
         {/* About me Section */}
         <Box 
           ref={aboutAnimation.ref}
-          className={`slide-in-left ${aboutAnimation.isVisible ? 'visible' : ''}`}
           sx={{ mb: 4 }} 
           id="about-section"
         >
-          <Typography variant="h2" component="h2" gutterBottom>
-            Acerca de Javier Zarate
-          </Typography>
-          <Typography 
-            variant="body1" 
-            component="p"
-            className={`fade-in delay-1 ${aboutAnimation.isVisible ? 'visible' : ''}`}
-          >
-            Soy Javier Zarate y estuve protegiendo hogares, familias, autos y
-            negocios por más de 25 años. Estoy dedicado a encontrar la cobertura
-            adecuada para tus necesidades.
-          </Typography>
-          <Typography 
-            variant="body1" 
-            component="p"
-            className={`fade-in delay-2 ${aboutAnimation.isVisible ? 'visible' : ''}`}
-          >
-            Me destaco por mi enfoque personalizado, tarifas competitivas y
-            servicio al cliente excepcional. Conmigo, no sos solo un número de
-            póliza, sos parte de una familia.
-          </Typography>
+          <Slide direction="right" in={aboutAnimation.inView} timeout={600}>
+            <Typography variant="h2" component="h2" gutterBottom>
+              Acerca de Javier Zarate
+            </Typography>
+          </Slide>
+          <Fade in={aboutAnimation.inView} timeout={800} style={{ transitionDelay: '200ms' }}>
+            <Typography variant="body1" component="p">
+              Soy Javier Zarate y estuve protegiendo hogares, familias, autos y
+              negocios por más de 25 años. Estoy dedicado a encontrar la cobertura
+              adecuada para tus necesidades.
+            </Typography>
+          </Fade>
+          <Fade in={aboutAnimation.inView} timeout={800} style={{ transitionDelay: '400ms' }}>
+            <Typography variant="body1" component="p">
+              Me destaco por mi enfoque personalizado, tarifas competitivas y
+              servicio al cliente excepcional. Conmigo, no sos solo un número de
+              póliza, sos parte de una familia.
+            </Typography>
+          </Fade>
         </Box>
 
         {/* Why Choose Us Section */}
         <Box 
           ref={whyChooseAnimation.ref}
-          className={`slide-in-right ${whyChooseAnimation.isVisible ? 'visible' : ''}`}
           sx={{ mb: 8 }}
         >
-          <Typography variant="h2" component="h2" gutterBottom>
-            ¿Por qué elegir a Javier Zarate?
-          </Typography>
-          <Paper 
-            elevation={3} 
-            sx={{ 
-              p: 3,
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: 6,
-                transform: 'translateY(-2px)',
-              }
-            }}
-            className={`scale-in delay-1 ${whyChooseAnimation.isVisible ? 'visible' : ''}`}
-          >
-            <List>
-              {razonesList.map((item, index) => (
-                <React.Fragment key={index}>
-                  <ListItem
-                    className={`fade-in delay-${index + 2} ${whyChooseAnimation.isVisible ? 'visible' : ''}`}
-                  >
-                    <ListItemIcon>
-                      <Check color={"secondary.main"} />
-                    </ListItemIcon>
-                    <ListItemText primary={item} />
-                  </ListItem>
-                  {index < 4 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
+          <Slide direction="left" in={whyChooseAnimation.inView} timeout={600}>
+            <Typography variant="h2" component="h2" gutterBottom>
+              ¿Por qué elegir a Javier Zarate?
+            </Typography>
+          </Slide>
+          <Grow in={whyChooseAnimation.inView} timeout={800} style={{ transitionDelay: '200ms' }}>
+            <Paper 
+              elevation={3} 
+              sx={{ 
+                p: 3,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  boxShadow: 8,
+                  transform: 'translateY(-4px)',
+                }
+              }}
+            >
+              <List>
+                {razonesList.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <Fade 
+                      in={whyChooseAnimation.inView} 
+                      timeout={600}
+                      style={{ transitionDelay: `${400 + index * 100}ms` }}
+                    >
+                      <ListItem>
+                        <ListItemIcon>
+                          <Check color={"secondary.main"} />
+                        </ListItemIcon>
+                        <ListItemText primary={item} />
+                      </ListItem>
+                    </Fade>
+                    {index < 4 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            </Paper>
+          </Grow>
         </Box>
 
         {/* Insurance Types Section */}
         <Box 
           ref={servicesAnimation.ref}
-          className={`fade-in ${servicesAnimation.isVisible ? 'visible' : ''}`}
           sx={{ mb: 8 }} 
           id="services-section"
         >
-          <Typography variant="h2" component="h2" gutterBottom>
-            Servicios de Seguros
-          </Typography>
+          <Fade in={servicesAnimation.inView} timeout={600}>
+            <Typography variant="h2" component="h2" gutterBottom>
+              Servicios de Seguros
+            </Typography>
+          </Fade>
           <Grid container spacing={4}>
             {insuranceTypes.map((type, index) => (
               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-                <Card 
-                  sx={{ 
-                    height: "100%",
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': {
-                      transform: 'translateY(-8px) scale(1.02)',
-                      boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
-                    }
-                  }}
-                  className={`scale-in delay-${index + 1} ${servicesAnimation.isVisible ? 'visible' : ''}`}
+                <Zoom 
+                  in={servicesAnimation.inView} 
+                  timeout={600}
+                  style={{ transitionDelay: `${200 + index * 150}ms` }}
                 >
-                  <CardMedia
-                    sx={{
-                      height: 140,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      bgcolor: "primary.light",
-                      color: "primary.contrastText",
-                      transition: 'all 0.3s ease',
+                  <Card 
+                    sx={{ 
+                      height: "100%",
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-8px) scale(1.02)',
+                        boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
+                      }
                     }}
                   >
-                    {React.cloneElement(type.icon, { 
-                      size: 64,
-                      style: { 
-                        transition: 'transform 0.3s ease',
-                      }
-                    })}
-                  </CardMedia>
-                  <CardContent>
-                    <Typography gutterBottom variant="h5" component="div">
-                      {type.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {type.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                    <CardMedia
+                      sx={{
+                        height: 140,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: "primary.light",
+                        color: "primary.contrastText",
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&:hover': {
+                          bgcolor: "primary.dark",
+                        }
+                      }}
+                    >
+                      {React.cloneElement(type.icon, { 
+                        size: 64,
+                        style: { 
+                          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        }
+                      })}
+                    </CardMedia>
+                    <CardContent>
+                      <Typography gutterBottom variant="h5" component="div">
+                        {type.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {type.description}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Zoom>
               </Grid>
             ))}
           </Grid>
