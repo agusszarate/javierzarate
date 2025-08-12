@@ -68,13 +68,14 @@ export default function Body() {
         <LazyMotion features={domAnimation}>
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 {/* Hero Section */}
-                <m.div
+                <Box
                     sx={{
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
                         py: 8,
                         textAlign: 'center',
                     }}
+                    component={m.div}
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
@@ -96,7 +97,7 @@ export default function Body() {
                             Obtené tu cotización
                         </Button>
                     </Container>
-                </m.div>
+                </Box>
                 {/* Main Content */}
                 <Container component="main" sx={{ mt: 8, mb: 2 }} maxWidth="lg">
                     {/* About me Section */}
