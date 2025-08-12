@@ -350,7 +350,7 @@ const Form = () => {
             </Typography>
             <Grid container spacing={4}>
                 <Grid size={12}>
-                    <Paper elevation={3} sx={{ p: 3 }}>
+                    <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
                         <Box component="form" onSubmit={handleSubmit} noValidate>
                             <Grid container spacing={2}>
                                 {/* Form Fields */}
