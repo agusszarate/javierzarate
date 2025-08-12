@@ -5,6 +5,7 @@ import { AboutSection } from '@/components/sections/AboutSection'
 import { ServicesSection } from '@/components/sections/ServicesSection'
 import { ModernHeader } from '@/components/layout/ModernHeader'
 import { ModernFooter } from '@/components/layout/ModernFooter'
+import { ModernQuoteForm } from '@/components/forms/ModernQuoteForm'
 
 export default function ModernMain() {
     const scrollTo = (sectionName: string) => {
@@ -33,7 +34,7 @@ export default function ModernMain() {
                 <AboutSection />
                 <ServicesSection />
                 
-                {/* Quote Section Placeholder - Will be replaced with modern form */}
+                {/* Modern Quote Section */}
                 <section id="quote-section" className="py-20 bg-background">
                     <div className="container mx-auto px-4">
                         <div className="text-center mb-16">
@@ -41,21 +42,12 @@ export default function ModernMain() {
                                 Solicitar Cotización
                             </h2>
                             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                                Completa el formulario y recibe tu cotización personalizada
+                                Completa el formulario y recibe tu cotización personalizada. 
+                                Para motos y cuatriciclos, obtén una cotización instantánea.
                             </p>
                         </div>
                         
-                        {/* This will be replaced with the modernized quote form */}
-                        <div className="max-w-4xl mx-auto">
-                            <div className="bg-muted/20 border-2 border-dashed border-muted-foreground/20 rounded-lg p-12 text-center">
-                                <p className="text-muted-foreground">
-                                    🚧 Modern Quote Form Component - Coming in Phase 4
-                                </p>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    This will replace the current 990+ line form with a modern, modular component
-                                </p>
-                            </div>
-                        </div>
+                        <ModernQuoteForm />
                     </div>
                 </section>
             </main>
