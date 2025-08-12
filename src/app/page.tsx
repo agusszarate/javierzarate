@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
 import Body from '@/components/body'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import ModernMain from '@/components/ModernMain'
 
 const theme = createTheme({
     palette: {
@@ -40,9 +41,12 @@ const theme = createTheme({
 })
 
 export default function Main() {
+    // Feature flag for modern version - set to true to use new shadcn/ui version
+    const useModernVersion = true
+
     const scrollTo = (sectionName: string) => {
         const sectionId = document.getElementById(sectionName)
-        const headerOffset = 94
+        const headerOffset = useModernVersion ? 80 : 94
         const elementPosition = sectionId?.getBoundingClientRect().top || 0
         const offsetPosition = elementPosition + window.scrollY - headerOffset
 
@@ -50,6 +54,10 @@ export default function Main() {
             top: offsetPosition,
             behavior: 'smooth',
         })
+    }
+
+    if (useModernVersion) {
+        return <ModernMain />
     }
 
     return (

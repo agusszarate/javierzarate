@@ -10,7 +10,9 @@ interface HeroSectionProps {
 export function HeroSection({ onScrollToQuote }: HeroSectionProps) {
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="rgba(255,255,255,0.05)"><path d="M0 .5H31.5V32"/></svg>')] opacity-20" />
+      <div className="absolute inset-0 opacity-20">
+        <div className="w-full h-full bg-[length:32px_32px] bg-[image:url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMCAwSDMxLjVWMzIiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPgo8L3N2Zz4K')]" />
+      </div>
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.div

@@ -1,7 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
-import { Check, Shield, Clock, Users, Award, Heart } from 'lucide-react'
+import { Shield, Clock, Users, Award, Heart } from 'lucide-react'
 
 const features = [
   {
