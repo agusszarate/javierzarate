@@ -1,3 +1,1 @@
-export interface ComponentProps {
-    scrollTo: (sectionId: string) => void;
-}
+// Moved to src/types/common.ts
