@@ -34,22 +34,28 @@ export function MotorcycleSelector() {
         }
     }
 
-    const getActivarMarcas = () => {
-        fetchData('/api/activar/brands', actions.setActivarMarcas)
+    const getActivarMarcas = (section: string = 'moto') => {
+        console.log(`[ACTIVAR] MotorcycleSelector: getActivarMarcas called with section: ${section}`)
+        fetchData(`/api/activar/brands?section=${section}`, actions.setActivarMarcas)
     }
 
     const getActivarModelos = (brandId: string) => {
-        fetchData(`/api/activar/models?brandId=${brandId}`, actions.setActivarModelos)
+        const section = state.activarSeccion || 'moto'
+        console.log(`[ACTIVAR] MotorcycleSelector: getActivarModelos called with brandId: ${brandId}, section: ${section}`)
+        fetchData(`/api/activar/models?brandId=${brandId}&section=${section}`, actions.setActivarModelos)
     }
 
     const getActivarYears = (modelCode: string) => {
         fetchData(`/api/activar/years?modelCode=${modelCode}`, actions.setActivarYears)
     }
 
-    // Load brands on component mount
+    // Load brands on component mount and when section changes
     useEffect(() => {
-        getActivarMarcas()
-    }, [])
+        if (state.activarSeccion) {
+            console.log(`[ACTIVAR] MotorcycleSelector: Loading brands for section: ${state.activarSeccion}`)
+            getActivarMarcas(state.activarSeccion)
+        }
+    }, [state.activarSeccion])
 
     const handleMarcaChange = (marcaId: string) => {
         const selectedMarca = state.activarMarcas.find((m) => m.id === marcaId)
