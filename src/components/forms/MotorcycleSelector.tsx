@@ -245,7 +245,7 @@ export function MotorcycleSelector() {
             <div className="space-y-2">
                 <Label>Año</Label>
                 <Select
-                    value={state.activarYear.toString()}
+                    value={state.activarYear ? state.activarYear.toString() : ''}
                     onValueChange={handleYearChange}
                     disabled={!state.activarModelo.code}
                 >
@@ -256,7 +256,7 @@ export function MotorcycleSelector() {
                         {state.activarModelo.code ? (
                             state.activarYears.length > 0 ? (
                                 state.activarYears.map((yearObj) => (
-                                    <SelectItem key={yearObj.year} value={yearObj.year}>
+                                    <SelectItem key={yearObj.year} value={yearObj.year.toString()}>
                                         {yearObj.year}
                                     </SelectItem>
                                 ))

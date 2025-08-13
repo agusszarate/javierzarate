@@ -45,7 +45,7 @@ export interface QuoteFormState {
     // Activar.app data
     activarMarcas: ActivarData[]
     activarModelos: ActivarModel[]
-    activarYears: { year: string }[]
+    activarYears: { year: number; value: string }[]
     activarMarca: ActivarData
     activarModelo: ActivarModel
     activarYear: number | ''
@@ -81,7 +81,7 @@ export interface QuoteFormActions {
     // Activar.app actions
     setActivarMarcas: (marcas: ActivarData[]) => void
     setActivarModelos: (modelos: ActivarModel[]) => void
-    setActivarYears: (years: { year: string }[]) => void
+    setActivarYears: (years: { year: number; value: string }[]) => void
     setActivarMarca: (marca: ActivarData) => void
     setActivarModelo: (modelo: ActivarModel) => void
     setActivarYear: (year: number | '') => void
