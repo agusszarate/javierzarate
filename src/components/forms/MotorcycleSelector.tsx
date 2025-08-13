@@ -53,9 +53,17 @@ export function MotorcycleSelector() {
     useEffect(() => {
         if (state.activarSeccion) {
             console.log(`[ACTIVAR] MotorcycleSelector: Loading brands for section: ${state.activarSeccion}`)
+            
+            // Reset all dependent fields when vehicle type changes
+            actions.setActivarMarca({ id: '', name: '' })
+            actions.setActivarModelo({ code: '', model: '' })
+            actions.setActivarYear('')
+            actions.setActivarModelos([])
+            actions.setActivarYears([])
+            
             getActivarMarcas(state.activarSeccion)
         }
-    }, [state.activarSeccion])
+    }, [state.activarSeccion, actions])
 
     const handleMarcaChange = (marcaId: string) => {
         const selectedMarca = state.activarMarcas.find((m) => m.id === marcaId)
