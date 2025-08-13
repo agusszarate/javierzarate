@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useQuoteForm } from '@/contexts/QuoteFormContext'
 import { Loader2, Zap } from 'lucide-react'
+import { getApiSection } from '@/lib/activarMapping'
 
 export function MotorcycleSelector() {
     const { state, actions } = useQuoteForm()
@@ -34,22 +35,37 @@ export function MotorcycleSelector() {
         }
     }
 
-    const getActivarMarcas = () => {
-        fetchData('/api/activar/brands', actions.setActivarMarcas)
+    const getActivarMarcas = (section: string = 'moto') => {
+        console.log(`[ACTIVAR] MotorcycleSelector: getActivarMarcas called with section: ${section}`)
+        fetchData(`/api/activar/brands?section=${section}`, actions.setActivarMarcas)
     }
 
     const getActivarModelos = (brandId: string) => {
-        fetchData(`/api/activar/models?brandId=${brandId}`, actions.setActivarModelos)
+        const section = state.activarSeccion || 'moto'
+        console.log(`[ACTIVAR] MotorcycleSelector: getActivarModelos called with brandId: ${brandId}, section: ${section}`)
+        fetchData(`/api/activar/models?brandId=${brandId}&section=${section}`, actions.setActivarModelos)
     }
 
     const getActivarYears = (modelCode: string) => {
         fetchData(`/api/activar/years?modelCode=${modelCode}`, actions.setActivarYears)
     }
 
-    // Load brands on component mount
+    // Load brands on component mount and when section changes
     useEffect(() => {
-        getActivarMarcas()
-    }, [])
+        if (state.activarSeccion) {
+            console.log(`[ACTIVAR] MotorcycleSelector: Loading brands for section: ${state.activarSeccion}`)
+            
+            // Reset all dependent fields when vehicle type changes
+            actions.setActivarMarca({ id: '', name: '' })
+            actions.setActivarModelo({ code: '', model: '' })
+            actions.setActivarYear('')
+            actions.setActivarModelos([])
+            actions.setActivarYears([])
+            
+            getActivarMarcas(state.activarSeccion)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.activarSeccion])
 
     const handleMarcaChange = (marcaId: string) => {
         const selectedMarca = state.activarMarcas.find((m) => m.id === marcaId)
@@ -78,7 +94,16 @@ export function MotorcycleSelector() {
     }
 
     const handleYearChange = (year: string) => {
-        actions.setActivarYear(Number(year))
+        // Don't process empty selections
+        if (!year) {
+            return
+        }
+        
+        const yearNumber = Number(year)
+        // Only set the year if it's a valid number > 0
+        if (!isNaN(yearNumber) && yearNumber > 0) {
+            actions.setActivarYear(yearNumber)
+        }
     }
 
     const handleQuote = async () => {
@@ -97,7 +122,7 @@ export function MotorcycleSelector() {
                 client_email: state.personalInfo.email,
                 client_first_name: state.personalInfo.name.split(' ')[0] || '',
                 client_last_name: state.personalInfo.name.split(' ').slice(1).join(' ') || '',
-                section: state.activarSeccion,
+                section: getApiSection(state.activarSeccion),
                 year: state.activarYear,
                 is0km: state.activarYear === new Date().getFullYear(),
                 zone_id: state.zoneId,
@@ -239,7 +264,7 @@ export function MotorcycleSelector() {
             <div className="space-y-2">
                 <Label>Año</Label>
                 <Select
-                    value={state.activarYear.toString()}
+                    value={typeof state.activarYear === 'number' ? state.activarYear.toString() : ''}
                     onValueChange={handleYearChange}
                     disabled={!state.activarModelo.code}
                 >
@@ -250,7 +275,7 @@ export function MotorcycleSelector() {
                         {state.activarModelo.code ? (
                             state.activarYears.length > 0 ? (
                                 state.activarYears.map((yearObj) => (
-                                    <SelectItem key={yearObj.year} value={yearObj.year}>
+                                    <SelectItem key={yearObj.year} value={yearObj.year.toString()}>
                                         {yearObj.year}
                                     </SelectItem>
                                 ))
