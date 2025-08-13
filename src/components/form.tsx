@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
     Box,
     Typography,
@@ -16,6 +16,7 @@ import { CheckCircle } from 'lucide-react'
 
 const Form = () => {
     const vehicleAPI = process.env.NEXT_PUBLIC_vehiclesAPI
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [quoteType, setQuoteType] = useState<string>('Vehiculo')
@@ -48,13 +49,26 @@ const Form = () => {
     const [activarSeccion, setActivarSeccion] = useState<'moto' | 'cuatri' | ''>('')
     const [showQuote, setShowQuote] = useState(false)
     const [quoteResult, setQuoteResult] = useState<any>(null)
+    const [postalCode, setPostalCode] = useState<string>('')
+    const [zoneId, setZoneId] = useState<number | null>(null)
+    const [zoneError, setZoneError] = useState<string>('')
 
     const handleChange = (event: { target: { value: React.SetStateAction<string> } }) => {
-        setQuoteType(event.target.value)
+        const newQuoteType = event.target.value as string
+        console.log('Quote type changed to:', newQuoteType)
+        setQuoteType(newQuoteType)
         // Reset states when changing quote type
-        if (event.target.value !== 'Activar_app') {
+        if (newQuoteType !== 'Activar_app') {
             setShowQuote(false)
             setQuoteResult(null)
+            setZoneId(null)
+            setZoneError('')
+            // Don't reset postal code so it stays for other quote types
+            // setPostalCode('')
+            setActivarSeccion('')
+            setActivarMarca({ id: '', name: '' })
+            setActivarModelo({ code: '', model: '' })
+            setActivarYear('')
         }
     }
 
@@ -204,9 +218,57 @@ const Form = () => {
         fetchData(`/api/activar/years?modelCode=${modelCode}`, 'activarYears')
     }
 
+    const getZoneId = async (postalCode: string) => {
+        try {
+            setZoneError('')
+            const response = await fetch(`/api/activar/zones?postal_code=${postalCode}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`)
+            }
+
+            const data = await response.json()
+            
+            if (data.data && data.data.length > 0) {
+                const zone = data.data[0]
+                setZoneId(zone.id)
+                console.log('Zone found:', zone)
+                return zone.id
+            } else {
+                setZoneError('No se encontró zona para este código postal')
+                setZoneId(null)
+                return null
+            }
+        } catch (error) {
+            console.error('Error fetching zone:', error)
+            setZoneError('Error al buscar la zona del código postal')
+            setZoneId(null)
+            return null
+        }
+    }
+
     const handleActivarQuote = async () => {
         setLoading(true)
         try {
+            // Primero buscar el zone_id basado en el código postal
+            if (!postalCode) {
+                setZoneError('Por favor ingresa tu código postal')
+                setLoading(false)
+                return
+            }
+
+            const foundZoneId = await getZoneId(postalCode)
+            
+            if (!foundZoneId) {
+                setLoading(false)
+                return // El error ya se muestra en getZoneId
+            }
+
             const nameElement = document.getElementById('name') as HTMLInputElement
             const emailElement = document.getElementById('email') as HTMLInputElement
 
@@ -223,7 +285,7 @@ const Form = () => {
                 section: activarSeccion,
                 year: activarYear,
                 is0km: activarYear === new Date().getFullYear(),
-                zone_id: 430, // Valor por defecto
+                zone_id: foundZoneId, // Usar el zone_id obtenido dinámicamente
                 channel: 'cotizador',
             }
 
@@ -264,7 +326,9 @@ const Form = () => {
                                 return `$${data.on_off[0].premio} (${data.on_off[0].coverage})`
                             return 'Múltiples opciones disponibles'
                         })(),
-                        activarZonaId: '430',
+                        activarZonaId: zoneId?.toString() || 'No encontrado',
+                        activarCodigoPostal: postalCode,
+                        activarZona: zoneId ? 'Zona encontrada' : 'No encontrada',
                         solicitorContacto: 'false',
                     }
 
@@ -316,6 +380,10 @@ const Form = () => {
                 Sección: ${activarSeccion}
                 Valor cotizado: ${quoteResult?.value || quoteResult?.price || 'N/A'}
                 
+                Ubicación:
+                Código Postal: ${postalCode}
+                Zone ID: ${zoneId || 'No encontrado'}
+                
                 Mensaje adicional:
                 ${formData.get('message')}
             `
@@ -348,6 +416,51 @@ const Form = () => {
             <Typography variant="h2" component="h2" gutterBottom id={'contact-section'}>
                 Solicitar cotización
             </Typography>
+            {/* Debug info */}
+            {process.env.NODE_ENV === 'development' && (
+                <div style={{ background: '#f0f0f0', padding: '10px', marginBottom: '10px' }}>
+                    Debug: Quote Type = {quoteType}, Postal Code = {postalCode}
+                    <br />
+                    Should show postal field: {String(quoteType === 'Activar_app')}
+                </div>
+            )}
+            
+            {/* CAMPO CÓDIGO POSTAL INDEPENDIENTE - SIEMPRE VISIBLE PARA TESTING */}
+            {quoteType === 'Activar_app' && (
+                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, mb: 2, backgroundColor: '#ffeb3b' }}>
+                    <Typography variant="h5" sx={{ mb: 2, color: '#d32f2f' }}>
+                        🚨 CAMPO CÓDIGO POSTAL (PRUEBA)
+                    </Typography>
+                    <TextField
+                        required
+                        fullWidth
+                        id="postalCodeTest"
+                        label="🏠 CÓDIGO POSTAL - CAMPO DE PRUEBA"
+                        name="postalCodeTest"
+                        type="number"
+                        placeholder="Ingresa tu código postal (ej: 1878)"
+                        value={postalCode}
+                        onChange={(e) => {
+                            const value = e.target.value
+                            setPostalCode(value)
+                            setZoneError('')
+                        }}
+                        error={!!zoneError}
+                        helperText={zoneError || 'Este campo debería estar visible cuando seleccionas Activar_app'}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: 'white',
+                                fontSize: '1.2rem',
+                                fontWeight: 'bold'
+                            },
+                            '& .MuiInputLabel-root': {
+                                fontWeight: 'bold',
+                                fontSize: '1.2rem'
+                            }
+                        }}
+                    />
+                </Paper>
+            )}
             <Grid container spacing={4}>
                 <Grid size={12}>
                     <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
@@ -421,6 +534,42 @@ const Form = () => {
                                         rows={4.5}
                                     />
                                 </Grid>
+                                
+                                {/* Campo código postal SIEMPRE visible para Activar_app */}
+                                {quoteType === 'Activar_app' && (
+                                    <Grid size={12}>
+                                        <TextField
+                                            margin="normal"
+                                            required
+                                            fullWidth
+                                            id="postalCode"
+                                            label="🏠 CÓDIGO POSTAL (OBLIGATORIO)"
+                                            name="postalCode"
+                                            type="number"
+                                            placeholder="Ingresa tu código postal (ej: 1878)"
+                                            value={postalCode}
+                                            onChange={(e) => {
+                                                const value = e.target.value
+                                                setPostalCode(value)
+                                                setZoneError('')
+                                            }}
+                                            error={!!zoneError}
+                                            helperText={zoneError || 'Este campo es obligatorio para obtener tu cotización'}
+                                            sx={{
+                                                backgroundColor: '#ffe082',
+                                                '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'white',
+                                                    fontWeight: 'bold'
+                                                },
+                                                '& .MuiInputLabel-root': {
+                                                    fontWeight: 'bold',
+                                                    fontSize: '1.1rem'
+                                                }
+                                            }}
+                                        />
+                                    </Grid>
+                                )}
+                                
                                 {quoteType === 'Vehiculo' && (
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <FormControl fullWidth sx={{ mt: 2 }}>
@@ -695,6 +844,7 @@ const Form = () => {
                                             sx={{ mt: 3 }}
                                             disabled={
                                                 loading ||
+                                                !postalCode ||
                                                 !activarSeccion ||
                                                 !activarMarca.id ||
                                                 !activarModelo.code ||
@@ -722,6 +872,18 @@ const Form = () => {
                                             <Typography variant="h6" sx={{ mb: 3 }}>
                                                 Seguro por días para {activarMarca.name}{' '}
                                                 {activarModelo.model} {activarYear}
+                                                {postalCode && (
+                                                    <>
+                                                        <br />
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                        >
+                                                            Código Postal: {postalCode}
+                                                            {zoneId && ` - Zone ID: ${zoneId}`}
+                                                        </Typography>
+                                                    </>
+                                                )}
                                             </Typography>
 
                                             {/* Opciones On-Off */}

@@ -58,6 +58,12 @@ export interface QuoteFormState {
   // UI state
   loading: boolean
   success: boolean
+
+  // Postal / zone (Activar_app)
+  postalCode: string
+  zoneId: number | null
+  zoneStatus: 'idle' | 'loading' | 'error' | 'ready'
+  zoneError: string | null
 }
 
 export interface QuoteFormActions {
@@ -88,6 +94,13 @@ export interface QuoteFormActions {
   // UI actions
   setLoading: (loading: boolean) => void
   setSuccess: (success: boolean) => void
+
+  // Postal / zone actions
+  setPostalCode: (code: string) => void
+  startZoneLookup: () => void
+  setZoneSuccess: (id: number) => void
+  setZoneError: (msg: string) => void
+  resetZone: () => void
   
   // Reset actions
   resetForm: () => void
@@ -118,7 +131,11 @@ const initialState: QuoteFormState = {
   showQuote: false,
   quoteResult: null,
   loading: false,
-  success: false
+  success: false,
+  postalCode: '',
+  zoneId: null,
+  zoneStatus: 'idle',
+  zoneError: null
 }
 
 const QuoteFormContext = createContext<{
@@ -171,6 +188,20 @@ export function QuoteFormProvider({ children }: { children: ReactNode }) {
     // UI actions
     setLoading: (loading) => setState(prev => ({ ...prev, loading })),
     setSuccess: (success) => setState(prev => ({ ...prev, success })),
+
+    // Postal / zone actions
+    setPostalCode: (postalCode) => setState(prev => ({
+      ...prev,
+      postalCode,
+      // Invalidate existing zone when postal changes
+      zoneId: postalCode !== prev.postalCode ? null : prev.zoneId,
+      zoneStatus: postalCode ? 'idle' : 'idle',
+      zoneError: null
+    })),
+    startZoneLookup: () => setState(prev => ({ ...prev, zoneStatus: 'loading', zoneError: null, zoneId: null })),
+    setZoneSuccess: (id) => setState(prev => ({ ...prev, zoneId: id, zoneStatus: 'ready', zoneError: null })),
+    setZoneError: (msg) => setState(prev => ({ ...prev, zoneStatus: 'error', zoneError: msg })),
+    resetZone: () => setState(prev => ({ ...prev, postalCode: '', zoneId: null, zoneStatus: 'idle', zoneError: null })),
     
     // Reset actions
     resetForm: () => setState(initialState)

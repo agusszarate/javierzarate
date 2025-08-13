@@ -3,14 +3,49 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useQuoteForm } from '@/contexts/QuoteFormContext'
+import { useEffect, useRef } from 'react'
 
 export function PersonalInfoForm() {
   const { state, actions } = useQuoteForm()
   const { personalInfo } = state
 
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleInputChange = (field: string, value: string) => {
     actions.setPersonalInfo({ [field]: value })
   }
+
+  const handlePostalChange = (value: string) => {
+    // Only allow digits
+    const digits = value.replace(/[^0-9]/g, '')
+    actions.setPostalCode(digits)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (digits.length < 4) {
+      // Too short to query
+      return
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        actions.startZoneLookup()
+        const res = await fetch(`/api/activar/zones?postal_code=${digits}`)
+        if (!res.ok) throw new Error('Respuesta inválida')
+        const data = await res.json()
+        const zone = data?.data?.[0]
+        if (zone?.id) {
+          actions.setZoneSuccess(zone.id)
+        } else {
+          actions.setZoneError('No se encontró zona')
+        }
+      } catch (e) {
+        actions.setZoneError('Error buscando zona')
+      }
+    }, 600)
+  }
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -66,6 +101,31 @@ export function PersonalInfoForm() {
               placeholder="12.345.678"
               required
             />
+          </div>
+        )}
+        {state.quoteType === 'Activar_app' && (
+          <div className="space-y-1">
+            <Label htmlFor="postalCode">Código Postal *</Label>
+            <Input
+              id="postalCode"
+              name="postalCode"
+              type="text"
+              inputMode="numeric"
+              value={state.postalCode}
+              onChange={(e) => handlePostalChange(e.target.value)}
+              placeholder="Ej: 1878"
+              required
+            />
+            <p className="text-xs ml-1">
+              {state.zoneStatus === 'idle' && !state.postalCode && 'Requerido para cotizar'}
+              {state.zoneStatus === 'loading' && 'Buscando zona...'}
+              {state.zoneStatus === 'error' && (
+                <span className="text-red-500">{state.zoneError}</span>
+              )}
+              {state.zoneStatus === 'ready' && state.zoneId && (
+                <span className="text-green-600">Zona OK (ID {state.zoneId})</span>
+              )}
+            </p>
           </div>
         )}
       </div>

@@ -76,6 +76,12 @@ export function MotorcycleSelector() {
   }
 
   const handleQuote = async () => {
+    // Pre-validate postal / zone for Activar_app
+    if (!state.postalCode || state.zoneStatus !== 'ready' || !state.zoneId) {
+      if (!state.postalCode) actions.setZoneError('Código postal requerido')
+      else if (state.zoneStatus !== 'ready') actions.setZoneError('Zona no validada')
+      return
+    }
     actions.setLoading(true)
     try {
       const quotePayload = {
@@ -88,7 +94,7 @@ export function MotorcycleSelector() {
         section: state.activarSeccion,
         year: state.activarYear,
         is0km: state.activarYear === new Date().getFullYear(),
-        zone_id: 430,
+        zone_id: state.zoneId,
         channel: 'cotizador',
       }
 
@@ -120,7 +126,8 @@ export function MotorcycleSelector() {
             if (data.on_off?.length > 0) return `$${data.on_off[0].premio} (${data.on_off[0].coverage})`
             return 'Múltiples opciones disponibles'
           })(),
-          activarZonaId: '430',
+          activarCodigoPostal: state.postalCode,
+          activarZonaId: String(state.zoneId),
           solicitorContacto: 'false',
         }
 
@@ -137,7 +144,7 @@ export function MotorcycleSelector() {
     }
   }
 
-  const isFormValid = state.activarSeccion && state.activarMarca.id && state.activarModelo.code && state.activarYear
+  const isFormValid = state.activarSeccion && state.activarMarca.id && state.activarModelo.code && state.activarYear && state.postalCode && state.zoneStatus === 'ready' && state.zoneId
 
   return (
     <div className="space-y-4">
@@ -241,7 +248,7 @@ export function MotorcycleSelector() {
       </div>
 
       {/* Quote Button */}
-      <Button
+  <Button
         onClick={handleQuote}
         disabled={!isFormValid || state.loading}
         className="w-full"
