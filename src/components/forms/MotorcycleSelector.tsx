@@ -84,7 +84,16 @@ export function MotorcycleSelector() {
     }
 
     const handleYearChange = (year: string) => {
-        actions.setActivarYear(Number(year))
+        // Don't process empty selections
+        if (!year) {
+            return
+        }
+        
+        const yearNumber = Number(year)
+        // Only set the year if it's a valid number > 0
+        if (!isNaN(yearNumber) && yearNumber > 0) {
+            actions.setActivarYear(yearNumber)
+        }
     }
 
     const handleQuote = async () => {
@@ -245,7 +254,7 @@ export function MotorcycleSelector() {
             <div className="space-y-2">
                 <Label>Año</Label>
                 <Select
-                    value={state.activarYear ? state.activarYear.toString() : ''}
+                    value={typeof state.activarYear === 'number' ? state.activarYear.toString() : ''}
                     onValueChange={handleYearChange}
                     disabled={!state.activarModelo.code}
                 >
