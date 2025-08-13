@@ -63,7 +63,8 @@ export function MotorcycleSelector() {
             
             getActivarMarcas(state.activarSeccion)
         }
-    }, [state.activarSeccion, actions])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.activarSeccion])
 
     const handleMarcaChange = (marcaId: string) => {
         const selectedMarca = state.activarMarcas.find((m) => m.id === marcaId)
