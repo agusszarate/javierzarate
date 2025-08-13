@@ -880,7 +880,6 @@ const Form = () => {
                                                             color="text.secondary"
                                                         >
                                                             Código Postal: {postalCode}
-                                                            {zoneId && ` - Zone ID: ${zoneId}`}
                                                         </Typography>
                                                     </>
                                                 )}
