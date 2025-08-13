@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useQuoteForm } from '@/contexts/QuoteFormContext'
 import { Loader2, Zap } from 'lucide-react'
+import { getApiSection } from '@/lib/activarMapping'
 
 export function MotorcycleSelector() {
     const { state, actions } = useQuoteForm()
@@ -121,7 +122,7 @@ export function MotorcycleSelector() {
                 client_email: state.personalInfo.email,
                 client_first_name: state.personalInfo.name.split(' ')[0] || '',
                 client_last_name: state.personalInfo.name.split(' ').slice(1).join(' ') || '',
-                section: state.activarSeccion,
+                section: getApiSection(state.activarSeccion),
                 year: state.activarYear,
                 is0km: state.activarYear === new Date().getFullYear(),
                 zone_id: state.zoneId,
