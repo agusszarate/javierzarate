@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     Box,
     Typography,
@@ -16,7 +16,6 @@ import { CheckCircle } from 'lucide-react'
 
 const Form = () => {
     const vehicleAPI = process.env.NEXT_PUBLIC_vehiclesAPI
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [quoteType, setQuoteType] = useState<string>('Vehiculo')
@@ -46,7 +45,7 @@ const Form = () => {
     const [activarMarca, setActivarMarca] = useState<any>({ id: '', name: '' })
     const [activarModelo, setActivarModelo] = useState<any>({ code: '', model: '' })
     const [activarYear, setActivarYear] = useState<number | ''>('')
-    const [activarSeccion, setActivarSeccion] = useState<'moto' | 'cuatri' | ''>('')
+    const [activarSeccion, setActivarSeccion] = useState<'moto' | 'cuatri' | ''>('moto')
     const [showQuote, setShowQuote] = useState(false)
     const [quoteResult, setQuoteResult] = useState<any>(null)
     const [postalCode, setPostalCode] = useState<string>('')
@@ -69,6 +68,9 @@ const Form = () => {
             setActivarMarca({ id: '', name: '' })
             setActivarModelo({ code: '', model: '' })
             setActivarYear('')
+        } else {
+            // Ensure default vehicle type is preselected
+            setActivarSeccion('moto')
         }
     }
 
@@ -233,7 +235,7 @@ const Form = () => {
             }
 
             const data = await response.json()
-            
+
             if (data.data && data.data.length > 0) {
                 const zone = data.data[0]
                 setZoneId(zone.id)
@@ -263,7 +265,7 @@ const Form = () => {
             }
 
             const foundZoneId = await getZoneId(postalCode)
-            
+
             if (!foundZoneId) {
                 setLoading(false)
                 return // El error ya se muestra en getZoneId
@@ -424,10 +426,13 @@ const Form = () => {
                     Should show postal field: {String(quoteType === 'Activar_app')}
                 </div>
             )}
-            
+
             {/* CAMPO CÓDIGO POSTAL INDEPENDIENTE - SIEMPRE VISIBLE PARA TESTING */}
             {quoteType === 'Activar_app' && (
-                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, mb: 2, backgroundColor: '#ffeb3b' }}>
+                <Paper
+                    elevation={3}
+                    sx={{ p: 3, borderRadius: 3, mb: 2, backgroundColor: '#ffeb3b' }}
+                >
                     <Typography variant="h5" sx={{ mb: 2, color: '#d32f2f' }}>
                         🚨 CAMPO CÓDIGO POSTAL (PRUEBA)
                     </Typography>
@@ -446,17 +451,20 @@ const Form = () => {
                             setZoneError('')
                         }}
                         error={!!zoneError}
-                        helperText={zoneError || 'Este campo debería estar visible cuando seleccionas Activar_app'}
+                        helperText={
+                            zoneError ||
+                            'Este campo debería estar visible cuando seleccionas Activar_app'
+                        }
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 backgroundColor: 'white',
                                 fontSize: '1.2rem',
-                                fontWeight: 'bold'
+                                fontWeight: 'bold',
                             },
                             '& .MuiInputLabel-root': {
                                 fontWeight: 'bold',
-                                fontSize: '1.2rem'
-                            }
+                                fontSize: '1.2rem',
+                            },
                         }}
                     />
                 </Paper>
@@ -534,7 +542,7 @@ const Form = () => {
                                         rows={4.5}
                                     />
                                 </Grid>
-                                
+
                                 {/* Campo código postal SIEMPRE visible para Activar_app */}
                                 {quoteType === 'Activar_app' && (
                                     <Grid size={12}>
@@ -554,22 +562,25 @@ const Form = () => {
                                                 setZoneError('')
                                             }}
                                             error={!!zoneError}
-                                            helperText={zoneError || 'Este campo es obligatorio para obtener tu cotización'}
+                                            helperText={
+                                                zoneError ||
+                                                'Este campo es obligatorio para obtener tu cotización'
+                                            }
                                             sx={{
                                                 backgroundColor: '#ffe082',
                                                 '& .MuiOutlinedInput-root': {
                                                     backgroundColor: 'white',
-                                                    fontWeight: 'bold'
+                                                    fontWeight: 'bold',
                                                 },
                                                 '& .MuiInputLabel-root': {
                                                     fontWeight: 'bold',
-                                                    fontSize: '1.1rem'
-                                                }
+                                                    fontSize: '1.1rem',
+                                                },
                                             }}
                                         />
                                     </Grid>
                                 )}
-                                
+
                                 {quoteType === 'Vehiculo' && (
                                     <Grid size={{ xs: 12, md: 6 }}>
                                         <FormControl fullWidth sx={{ mt: 2 }}>

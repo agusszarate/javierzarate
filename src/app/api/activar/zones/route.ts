@@ -29,9 +29,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(data)
     } catch (error) {
         console.error('Error fetching zones from Activar API:', error)
-        return NextResponse.json(
-            { error: 'Error fetching zone data' },
-            { status: 500 }
-        )
+        return NextResponse.json({ error: 'Error fetching zone data' }, { status: 500 })
     }
 }
