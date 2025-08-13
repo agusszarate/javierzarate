@@ -127,7 +127,7 @@ const initialState: QuoteFormState = {
     activarMarca: { id: '', name: '' },
     activarModelo: { code: '', model: '' },
     activarYear: '',
-    activarSeccion: '',
+    activarSeccion: 'moto',
     showQuote: false,
     quoteResult: null,
     loading: false,
@@ -151,7 +151,10 @@ export function QuoteFormProvider({ children }: { children: ReactNode }) {
             setState((prev) => ({
                 ...prev,
                 quoteType: type,
-                // Reset quote results when changing type
+                // Ensure default section is moto for Activar_app
+                activarSeccion:
+                    type === 'Activar_app' ? prev.activarSeccion || 'moto' : prev.activarSeccion,
+                // Reset quote results when changing away
                 showQuote: type === 'Activar_app' ? prev.showQuote : false,
                 quoteResult: type === 'Activar_app' ? prev.quoteResult : null,
             }))
