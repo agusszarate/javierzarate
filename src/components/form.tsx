@@ -13,6 +13,7 @@ import {
     CircularProgress,
 } from '@mui/material'
 import { CheckCircle } from 'lucide-react'
+import { getApiSection } from '@/lib/activarMapping'
 
 const Form = () => {
     const vehicleAPI = process.env.NEXT_PUBLIC_vehiclesAPI
@@ -46,12 +47,19 @@ const Form = () => {
     const [activarMarca, setActivarMarca] = useState<any>({ id: '', name: '' })
     const [activarModelo, setActivarModelo] = useState<any>({ code: '', model: '' })
     const [activarYear, setActivarYear] = useState<number | ''>('')
+    const [activarYearValue, setActivarYearValue] = useState<string>('') // NEW: Track year value
     const [activarSeccion, setActivarSeccion] = useState<'moto' | 'cuatri' | ''>('moto')
     const [showQuote, setShowQuote] = useState(false)
     const [quoteResult, setQuoteResult] = useState<any>(null)
     const [postalCode, setPostalCode] = useState<string>('')
     const [zoneId, setZoneId] = useState<number | null>(null)
     const [zoneError, setZoneError] = useState<string>('')
+
+    // Loading states for better UX
+    const [loadingBrands, setLoadingBrands] = useState(false)
+    const [loadingModels, setLoadingModels] = useState(false)
+    const [loadingYears, setLoadingYears] = useState(false)
+    const [loadingQuote, setLoadingQuote] = useState(false)
 
     const handleChange = (event: { target: { value: React.SetStateAction<string> } }) => {
         const newQuoteType = event.target.value as string
@@ -69,10 +77,32 @@ const Form = () => {
             setActivarMarca({ id: '', name: '' })
             setActivarModelo({ code: '', model: '' })
             setActivarYear('')
+            setActivarYearValue('') // Reset year value
         } else {
             // Ensure default vehicle type is preselected
             setActivarSeccion('moto')
         }
+    }
+
+    // NEW: Handle section change with proper reset
+    const handleActivarSectionChange = (newSection: 'moto' | 'cuatri') => {
+        console.log(`[ACTIVAR] Section changed to: ${newSection}`)
+        
+        // Reset dependent states
+        setActivarMarca({ id: '', name: '' })
+        setActivarModelo({ code: '', model: '' })
+        setActivarYear('')
+        setActivarYearValue('')
+        setActivarModelos([])
+        setActivarYears([])
+        setShowQuote(false)
+        setQuoteResult(null)
+        
+        // Set new section
+        setActivarSeccion(newSection)
+        
+        // Load brands for new section
+        getActivarMarcas(newSection)
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -164,12 +194,19 @@ const Form = () => {
     useEffect(() => {
         getMarcas()
         if (quoteType === 'Activar_app') {
-            getActivarMarcas()
+            getActivarMarcas(activarSeccion)
         }
-    }, [quoteType])
+    }, [quoteType, activarSeccion])
 
     const fetchData = async (url: string, voidType: string) => {
         try {
+            // Set loading state based on type
+            if (voidType === 'activarMarcas') setLoadingBrands(true)
+            else if (voidType === 'activarModelos') setLoadingModels(true)
+            else if (voidType === 'activarYears') setLoadingYears(true)
+
+            console.log(`[ACTIVAR] Fetching ${voidType} from ${url}`)
+
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -188,11 +225,21 @@ const Form = () => {
             else if (voidType === 'años') setAños(data)
             else if (voidType === 'activarMarcas') {
                 setActivarMarcas(data)
-            } else if (voidType === 'activarModelos') setActivarModelos(data)
-            else if (voidType === 'activarYears') setActivarYears(data)
-            else console.error('Invalid voidType:', voidType)
+                console.log(`[ACTIVAR] ✅ Loaded ${data.length} brands`)
+            } else if (voidType === 'activarModelos') {
+                setActivarModelos(data)
+                console.log(`[ACTIVAR] ✅ Loaded ${data.length} models`)
+            } else if (voidType === 'activarYears') {
+                setActivarYears(data)
+                console.log(`[ACTIVAR] ✅ Loaded ${data.length} years`)
+            } else console.error('Invalid voidType:', voidType)
         } catch (error) {
             console.error(`❌ Error fetching ${voidType} from ${url}:`, error)
+        } finally {
+            // Clear loading state
+            if (voidType === 'activarMarcas') setLoadingBrands(false)
+            else if (voidType === 'activarModelos') setLoadingModels(false)
+            else if (voidType === 'activarYears') setLoadingYears(false)
         }
     }
 
@@ -209,12 +256,12 @@ const Form = () => {
     }
 
     // Funciones para Activar_app
-    const getActivarMarcas = () => {
-        fetchData('/api/activar/brands', 'activarMarcas')
+    const getActivarMarcas = (seccion: string = 'moto') => {
+        fetchData(`/api/activar/brands?section=${seccion}`, 'activarMarcas')
     }
 
-    const getActivarModelos = (brandId: string) => {
-        fetchData(`/api/activar/models?brandId=${brandId}`, 'activarModelos')
+    const getActivarModelos = (brandId: string, seccion: string = activarSeccion) => {
+        fetchData(`/api/activar/models?brandId=${brandId}&section=${seccion}`, 'activarModelos')
     }
 
     const getActivarYears = (modelCode: string) => {
@@ -256,19 +303,19 @@ const Form = () => {
     }
 
     const handleActivarQuote = async () => {
-        setLoading(true)
+        setLoadingQuote(true)
         try {
             // Primero buscar el zone_id basado en el código postal
             if (!postalCode) {
                 setZoneError('Por favor ingresa tu código postal')
-                setLoading(false)
+                setLoadingQuote(false)
                 return
             }
 
             const foundZoneId = await getZoneId(postalCode)
 
             if (!foundZoneId) {
-                setLoading(false)
+                setLoadingQuote(false)
                 return // El error ya se muestra en getZoneId
             }
 
@@ -281,16 +328,18 @@ const Form = () => {
             const quotePayload = {
                 brand: activarMarca.name,
                 code: activarModelo.code,
-                value: '0', // Se obtendrá de la respuesta
+                value: activarYearValue, // Use the stored year value
                 client_email: emailElement?.value || '',
                 client_first_name: nameParts[0] || '',
                 client_last_name: nameParts.slice(1).join(' ') || '',
-                section: activarSeccion,
+                section: getApiSection(activarSeccion), // Use mapped section
                 year: activarYear,
                 is0km: activarYear === new Date().getFullYear(),
-                zone_id: foundZoneId, // Usar el zone_id obtenido dinámicamente
+                zone_id: foundZoneId,
                 channel: 'cotizador',
             }
+
+            console.log('[ACTIVAR] Quote payload:', quotePayload)
 
             const response = await fetch('/api/activar/quote', {
                 method: 'POST',
@@ -304,7 +353,7 @@ const Form = () => {
                 setQuoteResult(quoteData.data || quoteData) // Extraer data si existe
                 setShowQuote(true)
 
-                // Guardar en Google Sheets con solicitorContacto: false
+                // Guardar en Google Sheets
                 const formElement = document.querySelector('form') as HTMLFormElement
                 if (formElement) {
                     const formData = new FormData(formElement)
@@ -317,6 +366,8 @@ const Form = () => {
                         activarModelo: activarModelo.model,
                         activarYear: activarYear.toString(),
                         activarSeccion: activarSeccion,
+                        activarYearValue: activarYearValue, // NEW: Store year value
+                        activarGroupCode: activarSeccion === 'cuatri' ? '3' : '1', // NEW: Store group code
                         activarValor: (() => {
                             const data = quoteData.data || quoteData
                             // Buscar la opción recomendada o la primera disponible
@@ -345,12 +396,12 @@ const Form = () => {
         } catch (error) {
             console.error('Error getting quote:', error)
         } finally {
-            setLoading(false)
+            setLoadingQuote(false)
         }
     }
 
     const handleConfirmContact = async () => {
-        setLoading(true)
+        setLoadingQuote(true)
         try {
             const formElement = document.querySelector('form') as HTMLFormElement
             if (!formElement) {
@@ -410,7 +461,7 @@ const Form = () => {
         } catch (error) {
             console.error('Error confirming contact:', error)
         } finally {
-            setLoading(false)
+            setLoadingQuote(false)
         }
     }
 
@@ -724,7 +775,7 @@ const Form = () => {
                                                 value={activarSeccion}
                                                 label="Tipo de vehículo"
                                                 onChange={(e) =>
-                                                    setActivarSeccion(
+                                                    handleActivarSectionChange(
                                                         e.target.value as 'moto' | 'cuatri'
                                                     )
                                                 }
@@ -747,25 +798,31 @@ const Form = () => {
                                                     setActivarMarca(
                                                         selectedMarca || { id: '', name: '' }
                                                     )
-                                                    // Limpiar modelo y año al cambiar marca
+                                                    // Limpiar modelo, año y cotización al cambiar marca
                                                     setActivarModelo({ code: '', model: '' })
                                                     setActivarYear('')
+                                                    setActivarYearValue('')
                                                     setActivarModelos([])
                                                     setActivarYears([])
+                                                    setShowQuote(false)
+                                                    setQuoteResult(null)
                                                     if (selectedMarca) {
-                                                        getActivarModelos(selectedMarca.id)
+                                                        getActivarModelos(selectedMarca.id, activarSeccion)
                                                     }
                                                 }}
                                                 fullWidth
+                                                disabled={loadingBrands}
                                             >
-                                                {activarMarcas.length > 0 ? (
+                                                {loadingBrands ? (
+                                                    <MenuItem disabled>Cargando marcas...</MenuItem>
+                                                ) : activarMarcas.length > 0 ? (
                                                     activarMarcas.map((marca) => (
                                                         <MenuItem key={marca.id} value={marca.id}>
                                                             {marca.name}
                                                         </MenuItem>
                                                     ))
                                                 ) : (
-                                                    <MenuItem disabled>Cargando marcas...</MenuItem>
+                                                    <MenuItem disabled>Sin marcas disponibles</MenuItem>
                                                 )}
                                             </Select>
                                         </FormControl>
@@ -782,34 +839,31 @@ const Form = () => {
                                                     setActivarModelo(
                                                         selectedModelo || { code: '', model: '' }
                                                     )
-                                                    // Limpiar año al cambiar modelo
+                                                    // Limpiar año y cotización al cambiar modelo
                                                     setActivarYear('')
+                                                    setActivarYearValue('')
                                                     setActivarYears([])
+                                                    setShowQuote(false)
+                                                    setQuoteResult(null)
                                                     if (selectedModelo) {
                                                         getActivarYears(selectedModelo.code)
                                                     }
                                                 }}
                                                 fullWidth
+                                                disabled={loadingModels || !activarMarca.id}
                                             >
-                                                {activarMarca.id ? (
-                                                    activarModelos.length > 0 ? (
-                                                        activarModelos.map((modelo) => (
-                                                            <MenuItem
-                                                                key={modelo.code}
-                                                                value={modelo.code}
-                                                            >
-                                                                {modelo.model}
-                                                            </MenuItem>
-                                                        ))
-                                                    ) : (
-                                                        <MenuItem disabled>
-                                                            Cargando modelos...
+                                                {!activarMarca.id ? (
+                                                    <MenuItem disabled>Selecciona una marca</MenuItem>
+                                                ) : loadingModels ? (
+                                                    <MenuItem disabled>Cargando modelos...</MenuItem>
+                                                ) : activarModelos.length > 0 ? (
+                                                    activarModelos.map((modelo) => (
+                                                        <MenuItem key={modelo.code} value={modelo.code}>
+                                                            {modelo.model}
                                                         </MenuItem>
-                                                    )
+                                                    ))
                                                 ) : (
-                                                    <MenuItem disabled>
-                                                        Selecciona una marca
-                                                    </MenuItem>
+                                                    <MenuItem disabled>Sin modelos disponibles</MenuItem>
                                                 )}
                                             </Select>
                                         </FormControl>
@@ -819,30 +873,35 @@ const Form = () => {
                                             <Select
                                                 value={activarYear}
                                                 label="Año"
-                                                onChange={(e) =>
-                                                    setActivarYear(Number(e.target.value))
-                                                }
-                                                fullWidth
-                                            >
-                                                {activarModelo.code ? (
-                                                    activarYears.length > 0 ? (
-                                                        activarYears.map((yearObj) => (
-                                                            <MenuItem
-                                                                key={yearObj.year}
-                                                                value={parseInt(yearObj.year)}
-                                                            >
-                                                                {yearObj.year}
-                                                            </MenuItem>
-                                                        ))
-                                                    ) : (
-                                                        <MenuItem disabled>
-                                                            Cargando años...
-                                                        </MenuItem>
+                                                onChange={(e) => {
+                                                    const yearValue = Number(e.target.value)
+                                                    setActivarYear(yearValue)
+                                                    
+                                                    // Find and store the corresponding value
+                                                    const selectedYearObj = activarYears.find(
+                                                        (yearObj) => yearObj.year === yearValue
                                                     )
+                                                    setActivarYearValue(selectedYearObj?.value || '0')
+                                                    
+                                                    // Reset quote when year changes
+                                                    setShowQuote(false)
+                                                    setQuoteResult(null)
+                                                }}
+                                                fullWidth
+                                                disabled={loadingYears || !activarModelo.code}
+                                            >
+                                                {!activarModelo.code ? (
+                                                    <MenuItem disabled>Selecciona un modelo</MenuItem>
+                                                ) : loadingYears ? (
+                                                    <MenuItem disabled>Cargando años...</MenuItem>
+                                                ) : activarYears.length > 0 ? (
+                                                    activarYears.map((yearObj) => (
+                                                        <MenuItem key={yearObj.year} value={yearObj.year}>
+                                                            {yearObj.year} (${yearObj.value})
+                                                        </MenuItem>
+                                                    ))
                                                 ) : (
-                                                    <MenuItem disabled>
-                                                        Selecciona un modelo
-                                                    </MenuItem>
+                                                    <MenuItem disabled>Sin años disponibles</MenuItem>
                                                 )}
                                             </Select>
                                         </FormControl>
@@ -855,15 +914,16 @@ const Form = () => {
                                             size="large"
                                             sx={{ mt: 3 }}
                                             disabled={
-                                                loading ||
+                                                loadingQuote ||
                                                 !postalCode ||
                                                 !activarSeccion ||
                                                 !activarMarca.id ||
                                                 !activarModelo.code ||
-                                                !activarYear
+                                                !activarYear ||
+                                                !activarYearValue
                                             }
                                         >
-                                            {loading ? (
+                                            {loadingQuote ? (
                                                 <CircularProgress color="inherit" size={24} />
                                             ) : (
                                                 'Ver Cotización'
@@ -1110,9 +1170,9 @@ const Form = () => {
                                                 variant="contained"
                                                 color="secondary"
                                                 size="large"
-                                                disabled={loading}
+                                                disabled={loadingQuote}
                                             >
-                                                {loading ? (
+                                                {loadingQuote ? (
                                                     <CircularProgress color="inherit" size={24} />
                                                 ) : (
                                                     'Solicitar Contacto'
