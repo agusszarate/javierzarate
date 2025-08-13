@@ -86,7 +86,7 @@ const Form = () => {
 
     // NEW: Handle section change with proper reset
     const handleActivarSectionChange = (newSection: 'moto' | 'cuatri') => {
-        console.log(`[ACTIVAR] Section changed to: ${newSection}`)
+        console.log(`[ACTIVAR] Section changed from ${activarSeccion} to: ${newSection}`)
         
         // Reset dependent states
         setActivarMarca({ id: '', name: '' })
@@ -101,7 +101,8 @@ const Form = () => {
         // Set new section
         setActivarSeccion(newSection)
         
-        // Load brands for new section
+        // Load brands for new section - this ensures correct section is used
+        console.log(`[ACTIVAR] Loading brands for section: ${newSection}`)
         getActivarMarcas(newSection)
     }
 
@@ -193,10 +194,12 @@ const Form = () => {
 
     useEffect(() => {
         getMarcas()
-        if (quoteType === 'Activar_app') {
+        // Only load Activar brands when first switching to Activar_app
+        if (quoteType === 'Activar_app' && activarSeccion) {
+            console.log(`[ACTIVAR] Initial load for quote type change: ${activarSeccion}`)
             getActivarMarcas(activarSeccion)
         }
-    }, [quoteType, activarSeccion])
+    }, [quoteType])
 
     const fetchData = async (url: string, voidType: string) => {
         try {
@@ -257,6 +260,7 @@ const Form = () => {
 
     // Funciones para Activar_app
     const getActivarMarcas = (seccion: string = 'moto') => {
+        console.log(`[ACTIVAR] getActivarMarcas called with section: ${seccion}`)
         fetchData(`/api/activar/brands?section=${seccion}`, 'activarMarcas')
     }
 
