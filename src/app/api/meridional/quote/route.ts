@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { 
   createBrowser, 
   MERIDIONAL_SELECTORS, 
-  waitForSelector, 
+  waitForSelector,
+  findElement,
+  debugPageState,
   delay, 
   generateTraceId, 
   setInputValue, 
@@ -179,6 +181,11 @@ export async function POST(req: NextRequest) {
 
     steps.push('Page loaded')
 
+    // Debug: capture initial page state
+    if (debug) {
+      await debugPageState(page, 'after_page_load')
+    }
+
     // Accept cookies if banner appears
     await delay(2000)
     const cookieAcceptFound = await waitForSelector(page, MERIDIONAL_SELECTORS.cookieAccept, 3000)
@@ -202,67 +209,101 @@ export async function POST(req: NextRequest) {
 
     // Fill form based on mode
     if (mode === 'byPlate') {
-      // Fill license plate
-      const plateInputFound = await waitForSelector(page, MERIDIONAL_SELECTORS.licensePlateInput, 5000)
-      if (plateInputFound) {
-        await setInputValue(page, MERIDIONAL_SELECTORS.licensePlateInput, licensePlate!)
-        steps.push('License plate entered')
+      // Fill license plate using enhanced selector strategy
+      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 5000)
+      if (plateResult.found) {
+        await setInputValue(page, plateResult.selector!, licensePlate!)
+        steps.push(`License plate entered using selector: ${plateResult.selector}`)
       } else {
+        // Enhanced debugging when selector fails
+        let debugScreenshot = undefined
+        if (debug) {
+          await debugPageState(page, 'license_plate_selector_failed')
+          debugScreenshot = await page.screenshot({ encoding: 'base64' })
+          console.log(`[${traceId}] License plate selector failed - screenshot captured`)
+        }
+        
         return NextResponse.json({
           success: false,
           code: 'SELECTOR_NOT_FOUND',
           message: 'License plate input not found',
-          retryable: false
+          retryable: false,
+          debug: debug ? { 
+            steps: [...steps, 'Enhanced debugging enabled - see logs for page state'],
+            attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
+            screenshotBase64: debugScreenshot
+          } : undefined
         } as QuoteError, { status: 500 })
       }
     } else {
-      // Fill vehicle details
-      const yearInputFound = await waitForSelector(page, MERIDIONAL_SELECTORS.yearInput, 5000)
-      if (yearInputFound) {
-        await setInputValue(page, MERIDIONAL_SELECTORS.yearInput, vehicle!.year.toString())
-        steps.push('Vehicle year entered')
+      // Fill vehicle details using enhanced selectors
+      const yearResult = await findElement(page, MERIDIONAL_SELECTORS.yearInput, 5000)
+      if (yearResult.found) {
+        await setInputValue(page, yearResult.selector!, vehicle!.year.toString())
+        steps.push(`Vehicle year entered using selector: ${yearResult.selector}`)
       }
 
       // Try both input and select for brand
       let brandFilled = false
-      if (await waitForSelector(page, MERIDIONAL_SELECTORS.brandInput, 2000)) {
-        await setInputValue(page, MERIDIONAL_SELECTORS.brandInput, vehicle!.brand)
+      const brandInputResult = await findElement(page, MERIDIONAL_SELECTORS.brandInput, 2000)
+      if (brandInputResult.found) {
+        await setInputValue(page, brandInputResult.selector!, vehicle!.brand)
         brandFilled = true
-      } else if (await waitForSelector(page, MERIDIONAL_SELECTORS.brandSelect, 2000)) {
-        await selectOption(page, MERIDIONAL_SELECTORS.brandSelect, vehicle!.brand)
-        brandFilled = true
+        steps.push(`Brand entered via input: ${brandInputResult.selector}`)
+      } else {
+        const brandSelectResult = await findElement(page, MERIDIONAL_SELECTORS.brandSelect, 2000)
+        if (brandSelectResult.found) {
+          await selectOption(page, brandSelectResult.selector!, vehicle!.brand)
+          brandFilled = true
+          steps.push(`Brand selected via select: ${brandSelectResult.selector}`)
+        }
       }
 
-      if (brandFilled) {
-        steps.push('Vehicle brand entered')
-      } else {
+      if (!brandFilled) {
+        if (debug) {
+          await debugPageState(page, 'brand_selector_failed')
+        }
         return NextResponse.json({
           success: false,
           code: 'SELECTOR_NOT_FOUND',
           message: 'Brand input/select not found',
-          retryable: false
+          retryable: false,
+          debug: debug ? { 
+            steps: [...steps, 'Brand selector debugging enabled'],
+            attemptedInputSelectors: MERIDIONAL_SELECTORS.brandInput.split(', '),
+            attemptedSelectSelectors: MERIDIONAL_SELECTORS.brandSelect.split(', ')
+          } : undefined
         } as QuoteError, { status: 500 })
       }
 
       // Try both input and select for model
       let modelFilled = false
       await delay(1000) // Wait for dependent field to load
-      if (await waitForSelector(page, MERIDIONAL_SELECTORS.modelInput, 2000)) {
-        await setInputValue(page, MERIDIONAL_SELECTORS.modelInput, vehicle!.model)
+      const modelInputResult = await findElement(page, MERIDIONAL_SELECTORS.modelInput, 2000)
+      if (modelInputResult.found) {
+        await setInputValue(page, modelInputResult.selector!, vehicle!.model)
         modelFilled = true
-      } else if (await waitForSelector(page, MERIDIONAL_SELECTORS.modelSelect, 2000)) {
-        await selectOption(page, MERIDIONAL_SELECTORS.modelSelect, vehicle!.model)
-        modelFilled = true
+        steps.push(`Model entered via input: ${modelInputResult.selector}`)
+      } else {
+        const modelSelectResult = await findElement(page, MERIDIONAL_SELECTORS.modelSelect, 2000)
+        if (modelSelectResult.found) {
+          await selectOption(page, modelSelectResult.selector!, vehicle!.model)
+          modelFilled = true
+          steps.push(`Model selected via select: ${modelSelectResult.selector}`)
+        }
       }
 
       if (modelFilled) {
-        steps.push('Vehicle model entered')
+        steps.push('Vehicle model entered successfully')
       }
 
       // Version (optional)
-      if (vehicle!.version && await waitForSelector(page, MERIDIONAL_SELECTORS.versionInput, 2000)) {
-        await setInputValue(page, MERIDIONAL_SELECTORS.versionInput, vehicle!.version)
-        steps.push('Vehicle version entered')
+      if (vehicle!.version) {
+        const versionResult = await findElement(page, MERIDIONAL_SELECTORS.versionInput, 2000)
+        if (versionResult.found) {
+          await setInputValue(page, versionResult.selector!, vehicle!.version)
+          steps.push(`Vehicle version entered using: ${versionResult.selector}`)
+        }
       }
     }
 
@@ -297,24 +338,36 @@ export async function POST(req: NextRequest) {
       steps.push('GNC flag set')
     }
 
-    // Submit form
+    // Submit form using enhanced selector strategy
     let submitSuccess = false
-    if (await waitForSelector(page, MERIDIONAL_SELECTORS.searchButton, 5000)) {
-      await page.click(MERIDIONAL_SELECTORS.searchButton)
+    const searchResult = await findElement(page, MERIDIONAL_SELECTORS.searchButton, 5000)
+    if (searchResult.found) {
+      await page.click(searchResult.selector!)
       submitSuccess = true
-      steps.push('Form submitted')
-    } else if (await waitForSelector(page, MERIDIONAL_SELECTORS.nextButton, 2000)) {
-      await page.click(MERIDIONAL_SELECTORS.nextButton)
-      submitSuccess = true
-      steps.push('Next button clicked')
+      steps.push(`Form submitted using: ${searchResult.selector}`)
+    } else {
+      const nextResult = await findElement(page, MERIDIONAL_SELECTORS.nextButton, 2000)
+      if (nextResult.found) {
+        await page.click(nextResult.selector!)
+        submitSuccess = true
+        steps.push(`Next button clicked using: ${nextResult.selector}`)
+      }
     }
 
     if (!submitSuccess) {
+      if (debug) {
+        await debugPageState(page, 'submit_button_failed')
+      }
       return NextResponse.json({
         success: false,
         code: 'SELECTOR_NOT_FOUND',
         message: 'Submit button not found',
-        retryable: false
+        retryable: false,
+        debug: debug ? { 
+          steps: [...steps, 'Submit button debugging enabled'],
+          attemptedSearchSelectors: MERIDIONAL_SELECTORS.searchButton.split(', '),
+          attemptedNextSelectors: MERIDIONAL_SELECTORS.nextButton.split(', ')
+        } : undefined
       } as QuoteError, { status: 500 })
     }
 

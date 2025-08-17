@@ -109,46 +109,143 @@ export async function createBrowser() {
   }
 }
 
-// Meridional-specific selectors
+// Meridional-specific selectors with comprehensive fallbacks
 export const MERIDIONAL_SELECTORS = {
   // Cookie banner
-  cookieAccept: 'button[id*="accept"], button[class*="accept"], .cookie-banner button',
+  cookieAccept: 'button[id*="accept"], button[class*="accept"], .cookie-banner button, [data-accept], .btn-accept',
   
   // Mode toggle
-  withoutPlateToggle: 'input[type="checkbox"], label[for*="sin-patente"], [class*="toggle"]',
+  withoutPlateToggle: 'input[type="checkbox"], label[for*="sin-patente"], [class*="toggle"], [data-toggle]',
   
-  // Input fields  
-  licensePlateInput: 'input[placeholder*="patente"], input[name*="patente"], input[id*="patente"]',
-  yearInput: 'input[placeholder*="año"], input[name*="year"], input[id*="year"]',
-  brandInput: 'input[placeholder*="marca"], input[name*="marca"], input[id*="brand"]',
-  brandSelect: 'select[name*="marca"], select[id*="brand"]',
-  modelInput: 'input[placeholder*="modelo"], input[name*="modelo"], input[id*="model"]',
-  modelSelect: 'select[name*="modelo"], select[id*="model"]',
-  versionInput: 'input[placeholder*="version"], input[name*="version"]',
+  // Input fields - enhanced with more variations and fallbacks
+  licensePlateInput: [
+    'input[placeholder*="patente"]',
+    'input[name*="patente"]', 
+    'input[id*="patente"]',
+    'input[placeholder*="dominio"]',
+    'input[name*="dominio"]',
+    'input[id*="dominio"]',
+    'input[placeholder*="placa"]',
+    'input[name*="placa"]',
+    'input[type="text"]:first-of-type',
+    'input[maxlength="6"]',
+    'input[maxlength="7"]',
+    'input[maxlength="8"]',
+    '.form-control:first-of-type',
+    '.input-field:first-of-type input',
+    'form input[type="text"]:nth-of-type(1)'
+  ].join(', '),
+  
+  yearInput: [
+    'input[placeholder*="año"]',
+    'input[name*="year"]', 
+    'input[id*="year"]',
+    'input[name*="año"]',
+    'input[id*="año"]',
+    'input[type="number"]',
+    'input[min="1900"]',
+    'input[max="2025"]'
+  ].join(', '),
+  
+  brandInput: [
+    'input[placeholder*="marca"]',
+    'input[name*="marca"]',
+    'input[id*="brand"]',
+    'input[id*="marca"]',
+    'input[list*="brand"]',
+    'input[list*="marca"]'
+  ].join(', '),
+  
+  brandSelect: [
+    'select[name*="marca"]',
+    'select[id*="brand"]',
+    'select[id*="marca"]',
+    'select option[value*="FORD"]'
+  ].join(', '),
+  
+  modelInput: [
+    'input[placeholder*="modelo"]',
+    'input[name*="modelo"]',
+    'input[id*="model"]',
+    'input[id*="modelo"]',
+    'input[list*="model"]',
+    'input[list*="modelo"]'
+  ].join(', '),
+  
+  modelSelect: [
+    'select[name*="modelo"]',
+    'select[id*="model"]',
+    'select[id*="modelo"]'
+  ].join(', '),
+  
+  versionInput: [
+    'input[placeholder*="version"]',
+    'input[name*="version"]',
+    'input[id*="version"]',
+    'input[placeholder*="versión"]',
+    'input[name*="versión"]'
+  ].join(', '),
   
   // Payment method
-  paymentMethodSelect: 'select[name*="pago"], select[id*="payment"]',
+  paymentMethodSelect: [
+    'select[name*="pago"]',
+    'select[id*="payment"]',
+    'select[id*="pago"]',
+    'select option[value*="tarjeta"]'
+  ].join(', '),
+  
   creditCardOption: 'option[value*="tarjeta"], option[value*="credit"]',
   cbuOption: 'option[value*="cbu"], option[value*="transferencia"]',
   
   // Checkboxes
-  particularUseCheckbox: 'input[type="checkbox"][name*="particular"], input[id*="particular"]',
-  zeroKmCheckbox: 'input[type="checkbox"][name*="0km"], input[id*="zerokm"]',
-  gncCheckbox: 'input[type="checkbox"][name*="gnc"], input[id*="gnc"]',
+  particularUseCheckbox: [
+    'input[type="checkbox"][name*="particular"]',
+    'input[id*="particular"]',
+    'input[type="checkbox"][value*="particular"]'
+  ].join(', '),
+  
+  zeroKmCheckbox: [
+    'input[type="checkbox"][name*="0km"]',
+    'input[id*="zerokm"]',
+    'input[id*="0km"]',
+    'input[type="checkbox"][value*="0km"]'
+  ].join(', '),
+  
+  gncCheckbox: [
+    'input[type="checkbox"][name*="gnc"]',
+    'input[id*="gnc"]',
+    'input[type="checkbox"][value*="gnc"]'
+  ].join(', '),
   
   // Action buttons
-  searchButton: 'button[type="submit"], button[class*="buscar"], button[class*="search"]',
-  nextButton: 'button[class*="siguiente"], button[class*="next"]',
+  searchButton: [
+    'button[type="submit"]',
+    'button[class*="buscar"]',
+    'button[class*="search"]',
+    'input[type="submit"]',
+    '.btn-primary',
+    '.btn-search',
+    'button:contains("Buscar")',
+    'button:contains("Cotizar")'
+  ].join(', '),
+  
+  nextButton: [
+    'button[class*="siguiente"]',
+    'button[class*="next"]',
+    'button:contains("Siguiente")',
+    'button:contains("Continuar")',
+    '.btn-next'
+  ].join(', '),
   
   // Results
-  resultsContainer: '[class*="resultado"], [class*="plan"], [class*="cotizacion"]',
-  planName: '[class*="plan-name"], [class*="producto"], h3, h4',
-  planPrice: '[class*="precio"], [class*="monthly"], [class*="mensual"]',
-  planDetails: '[class*="detalle"], [class*="cobertura"], [class*="description"]',
-  franchise: '[class*="franquicia"], [class*="deducible"]',
+  resultsContainer: '[class*="resultado"], [class*="plan"], [class*="cotizacion"], .quote-result, .insurance-plan',
+  planName: '[class*="plan-name"], [class*="producto"], h3, h4, .plan-title, .product-name',
+  planPrice: '[class*="precio"], [class*="monthly"], [class*="mensual"], .price, .monthly-price',
+  planDetails: '[class*="detalle"], [class*="cobertura"], [class*="description"], .plan-details, .coverage',
+  franchise: '[class*="franquicia"], [class*="deducible"], .franchise, .deductible',
 }
 
-// Wait for element with timeout
+// Wait for element with timeout - enhanced with multiple selector support
 export async function waitForSelector(page: any, selector: string, timeout = 10000) {
   try {
     await page.waitForSelector(selector, { timeout, visible: true })
@@ -156,6 +253,68 @@ export async function waitForSelector(page: any, selector: string, timeout = 100
   } catch {
     console.log(`Selector not found: ${selector}`)
     return false
+  }
+}
+
+// Enhanced selector finder - tries multiple selectors and returns debugging info
+export async function findElement(page: any, selectorString: string, timeout = 10000) {
+  const selectors = selectorString.split(', ').map(s => s.trim())
+  
+  for (const selector of selectors) {
+    try {
+      await page.waitForSelector(selector, { timeout: timeout / selectors.length, visible: true })
+      console.log(`Found element with selector: ${selector}`)
+      return { found: true, selector, element: await page.$(selector) }
+    } catch {
+      console.log(`Selector failed: ${selector}`)
+      continue
+    }
+  }
+  
+  console.log(`All selectors failed for: ${selectorString}`)
+  return { found: false, selector: null, element: null }
+}
+
+// Debug page state - capture available form elements
+export async function debugPageState(page: any, stepName: string) {
+  try {
+    const debugInfo = await page.evaluate(() => {
+      const inputs = Array.from(document.querySelectorAll('input')).map(input => ({
+        type: input.type,
+        name: input.name || '',
+        id: input.id || '',
+        placeholder: input.placeholder || '',
+        className: input.className || '',
+        value: input.value || ''
+      }))
+      
+      const selects = Array.from(document.querySelectorAll('select')).map(select => ({
+        name: select.name || '',
+        id: select.id || '',
+        className: select.className || '',
+        options: Array.from(select.options).map(opt => opt.text).slice(0, 5) // First 5 options
+      }))
+      
+      const buttons = Array.from(document.querySelectorAll('button')).map(button => ({
+        type: button.type,
+        className: button.className || '',
+        textContent: (button.textContent || '').trim().slice(0, 50)
+      }))
+      
+      return {
+        url: window.location.href,
+        title: document.title,
+        inputs: inputs.slice(0, 10), // First 10 inputs
+        selects: selects.slice(0, 5), // First 5 selects
+        buttons: buttons.slice(0, 10) // First 10 buttons
+      }
+    })
+    
+    console.log(`[DEBUG ${stepName}]`, JSON.stringify(debugInfo, null, 2))
+    return debugInfo
+  } catch (error) {
+    console.log(`[DEBUG ${stepName}] Failed to capture page state:`, error)
+    return null
   }
 }
 
