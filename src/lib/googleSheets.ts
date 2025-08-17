@@ -27,6 +27,13 @@ export const getHeaders = (quoteType: string) => {
       return [...base, 'DNI', 'Marca', 'Modelo', 'Año', 'Mensaje']
     case 'Activar_app':
       return [...base, 'Marca', 'Modelo', 'Año', 'Seccion', 'Valor', 'ZonaId', 'SolicitorContacto', 'Mensaje']
+    case 'Meridional Auto Quotes':
+      return [
+        'Fecha', 'Modo', 'Patente', 'Año', 'Marca', 'Modelo', 'Version', 
+        'Medio de Pago', 'Uso Particular', 'Es 0Km', 'Tiene GNC', 
+        'Cantidad Resultados', 'Mejor Plan', 'Precio Mensual', 'Moneda',
+        'Duracion (ms)', 'Trace ID', 'URL Origen'
+      ]
     case 'Hogar':
     case 'Vida':
     case 'Negocios':

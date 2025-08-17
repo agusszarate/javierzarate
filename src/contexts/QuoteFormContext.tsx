@@ -27,6 +27,27 @@ export interface PersonalInfo {
     dni?: string
 }
 
+// Types for Meridional vehicle quotes
+export type VehicleMode = 'byPlate' | 'byVehicle'
+export type PaymentMethod = 'Tarjeta de crédito' | 'CBU'
+
+export interface VehicleFlags {
+    isParticular: boolean
+    isZeroKm?: boolean
+    hasGNC?: boolean
+}
+
+export interface VehicleInfo {
+    mode: VehicleMode
+    licensePlate?: string
+    year?: number
+    brand?: string
+    model?: string
+    version?: string
+    paymentMethod: PaymentMethod
+    flags: VehicleFlags
+}
+
 export interface QuoteFormState {
     // Current quote type
     quoteType: QuoteType
@@ -41,6 +62,9 @@ export interface QuoteFormState {
     modelos: VehicleData[]
     año: VehicleData
     años: VehicleData[]
+
+    // Meridional vehicle information for "Vehiculo" quote type
+    vehicleInfo: VehicleInfo
 
     // Activar.app data
     activarMarcas: ActivarData[]
@@ -77,6 +101,9 @@ export interface QuoteFormActions {
     setModelos: (modelos: VehicleData[]) => void
     setAño: (año: VehicleData) => void
     setAños: (años: VehicleData[]) => void
+
+    // Meridional vehicle actions
+    setVehicleInfo: (info: Partial<VehicleInfo>) => void
 
     // Activar.app actions
     setActivarMarcas: (marcas: ActivarData[]) => void
@@ -121,6 +148,13 @@ const initialState: QuoteFormState = {
     modelos: [],
     año: { codigo: '', nome: '' },
     años: [],
+    vehicleInfo: {
+        mode: 'byPlate',
+        paymentMethod: 'Tarjeta de crédito',
+        flags: {
+            isParticular: true,
+        },
+    },
     activarMarcas: [],
     activarModelos: [],
     activarYears: [],
@@ -174,6 +208,14 @@ export function QuoteFormProvider({ children }: { children: ReactNode }) {
         setModelos: (modelos) => setState((prev) => ({ ...prev, modelos })),
         setAño: (año) => setState((prev) => ({ ...prev, año })),
         setAños: (años) => setState((prev) => ({ ...prev, años })),
+
+        // Meridional vehicle actions
+        setVehicleInfo: (info) => {
+            setState((prev) => ({
+                ...prev,
+                vehicleInfo: { ...prev.vehicleInfo, ...info },
+            }))
+        },
 
         // Activar.app actions
         setActivarMarcas: (activarMarcas) => setState((prev) => ({ ...prev, activarMarcas })),

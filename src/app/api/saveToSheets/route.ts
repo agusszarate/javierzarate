@@ -210,6 +210,27 @@ export async function POST(req: NextRequest) {
                 formData.solicitorContacto || 'false',
                 formData.message || '',
             ]
+        } else if (quoteType === 'Meridional Auto Quotes') {
+            rowData = [
+                currentDate,
+                formData.mode || '',
+                formData.licensePlate || '',
+                formData.year?.toString() || '',
+                formData.brand || '',
+                formData.model || '',
+                formData.version || '',
+                formData.paymentMethod || '',
+                formData.isParticular?.toString() || 'true',
+                formData.isZeroKm?.toString() || 'false',
+                formData.hasGNC?.toString() || 'false',
+                formData.resultsCount?.toString() || '0',
+                formData.topPlanName || '',
+                formData.topPlanMonthly?.toString() || '0',
+                formData.currency || 'ARS',
+                formData.durationMs?.toString() || '0',
+                formData.traceId || '',
+                formData.sourceUrl || '',
+            ]
         } else {
             rowData = [
                 currentDate,

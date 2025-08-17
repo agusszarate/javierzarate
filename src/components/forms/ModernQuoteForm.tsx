@@ -4,7 +4,9 @@ import { QuoteFormProvider, useQuoteForm } from '@/contexts/QuoteFormContext'
 import { PersonalInfoForm } from './PersonalInfoForm'
 import { QuoteTypeSelector } from './QuoteTypeSelector'
 import { MotorcycleSelector } from './MotorcycleSelector'
+import { VehicleSelector } from './VehicleSelector'
 import { QuoteResults } from './QuoteResults'
+import { AutoQuoteResults } from './AutoQuoteResults'
 import { Button } from '@/components/ui/button'
 import { Loader2, Send } from 'lucide-react'
 
@@ -89,7 +91,15 @@ function ModernQuoteFormContent() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Quote Results - Show when available */}
-      {state.showQuote && <QuoteResults />}
+      {state.showQuote && (
+        <>
+          {/* Activar_app results */}
+          {state.quoteType === 'Activar_app' && <QuoteResults />}
+          
+          {/* Vehiculo (Meridional) results */}
+          {state.quoteType === 'Vehiculo' && <AutoQuoteResults />}
+        </>
+      )}
       
       {/* Main Form - Hide when showing results */}
       {!state.showQuote && (
@@ -144,20 +154,18 @@ function ModernQuoteFormContent() {
           {state.quoteType === 'Vehiculo' && (
             <Card>
               <CardHeader>
-                <CardTitle>🚗 Datos del Vehículo</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  🚗 Datos del Vehículo
+                  <span className="text-sm bg-secondary text-secondary-foreground px-2 py-1 rounded-full">
+                    Cotización con Meridional
+                  </span>
+                </CardTitle>
                 <CardDescription>
-                  Completa la información de tu vehículo
+                  Obtén una cotización automatizada de seguro de auto usando Meridional Seguros
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-muted/20 border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">
-                    🚧 Formulario de vehículos tradicionales
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Por ahora, usa el formulario de contacto general
-                  </p>
-                </div>
+                <VehicleSelector />
               </CardContent>
             </Card>
           )}
@@ -186,8 +194,8 @@ function ModernQuoteFormContent() {
             </Card>
           )}
 
-          {/* Submit Button for non-Activar forms */}
-          {state.quoteType !== 'Activar_app' && (
+          {/* Submit Button for non-Activar and non-Vehiculo forms */}
+          {!['Activar_app', 'Vehiculo'].includes(state.quoteType) && (
             <Card>
               <CardContent className="pt-6">
                 <Button
