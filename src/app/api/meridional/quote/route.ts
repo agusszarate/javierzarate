@@ -133,8 +133,29 @@ export async function POST(req: NextRequest) {
 
     // Launch browser
     console.log(`[${traceId}] Launching browser`)
-    browser = await createBrowser()
-    page = await browser.newPage()
+    try {
+      browser = await createBrowser()
+      page = await browser.newPage()
+    } catch (error: any) {
+      console.error(`[${traceId}] Browser launch failed:`, error)
+      
+      // Specific handling for Chromium binary issues
+      if (error.message?.includes('bin') || error.message?.includes('executablePath') || error.message?.includes('does not exist')) {
+        return NextResponse.json({
+          success: false,
+          code: 'BROWSER_LAUNCH_FAILED',
+          message: 'Browser launch failed - Chromium binary issue in serverless environment',
+          retryable: true,
+          debug: debug ? { 
+            steps: [...steps, `Browser launch error: ${error.message}`],
+            errorType: 'CHROMIUM_BINARY_ERROR'
+          } : undefined
+        } as QuoteError, { status: 500 })
+      }
+      
+      // Re-throw for other types of errors
+      throw error
+    }
 
     // Set realistic headers
     await page.setUserAgent(

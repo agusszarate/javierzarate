@@ -36,12 +36,76 @@ export async function createBrowser() {
     })
   } else {
     // Production with @sparticuz/chromium
-    return await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    })
+    try {
+      // First, try to get the executable path
+      let executablePath: string
+      try {
+        executablePath = await chromium.executablePath()
+      } catch (pathError: any) {
+        console.error('Failed to get chromium executable path:', pathError)
+        
+        // Try alternative approach
+        if (process.env.AWS_EXECUTION_ENV || process.env.VERCEL) {
+          // We're in a serverless environment, try manual path
+          executablePath = await chromium.executablePath('/opt/nodejs/node_modules/@sparticuz/chromium/bin')
+        } else {
+          throw pathError
+        }
+      }
+      
+      return await puppeteer.launch({
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--single-process',
+          '--no-zygote',
+        ],
+        defaultViewport: chromium.defaultViewport,
+        executablePath,
+        headless: chromium.headless,
+        timeout: 30000,
+      })
+    } catch (error) {
+      console.error('Failed to launch Chromium from @sparticuz/chromium:', error)
+      
+      // Fallback: try to use system Chrome/Chromium
+      const fallbackPaths = [
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+      ]
+      
+      for (const path of fallbackPaths) {
+        try {
+          return await puppeteer.launch({
+            executablePath: path,
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--disable-gpu',
+              '--disable-web-security',
+              '--window-size=1920,1080',
+            ],
+          })
+        } catch {
+          // Try next path
+          continue
+        }
+      }
+      
+      // If all else fails, re-throw the original error
+      throw error
+    }
   }
 }
 
