@@ -4,6 +4,7 @@ import {
   MERIDIONAL_SELECTORS, 
   waitForSelector,
   findElement,
+  findElementAggressive,
   debugPageState,
   delay, 
   generateTraceId, 
@@ -195,6 +196,40 @@ export async function POST(req: NextRequest) {
       steps.push('Cookie banner accepted')
     }
 
+    // Additional popup/overlay dismissal strategies
+    await delay(1000)
+    
+    // Try to dismiss any modals or overlays that might be blocking the form
+    const overlayDismissed = await page.evaluate(() => {
+      const overlaySelectors = [
+        '.modal-backdrop',
+        '.overlay',
+        '[class*="modal"]',
+        '[class*="popup"]',
+        '[class*="dialog"]',
+        '.close',
+        '[aria-label="Close"]',
+        '[aria-label="Cerrar"]'
+      ]
+      
+      for (const selector of overlaySelectors) {
+        const elements = document.querySelectorAll(selector)
+        // Use Array.from to handle NodeListOf<Element>
+        for (const element of Array.from(elements)) {
+          if ((element as HTMLElement).offsetParent !== null) {
+            (element as HTMLElement).click()
+            return true
+          }
+        }
+      }
+      return false
+    })
+    
+    if (overlayDismissed) {
+      await delay(1000)
+      steps.push('Overlay/modal dismissed')
+    }
+
     // Wait for form elements to load (increased wait time)
     await delay(3000)
     
@@ -217,59 +252,108 @@ export async function POST(req: NextRequest) {
 
     // Fill form based on mode
     if (mode === 'byPlate') {
-      // Fill license plate using enhanced selector strategy
-      console.log(`[${traceId}] Looking for license plate input...`)
-      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 10000)
+      // Fill license plate using ultra-aggressive strategy
+      console.log(`[${traceId}] Looking for license plate input with aggressive strategy...`)
+      
+      // Try multiple approaches with increasing aggressiveness
+      let plateInputFound = false
+      let finalSelector = ''
+      
+      // Approach 1: Standard enhanced selectors
+      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 8000)
       if (plateResult.found) {
         await setInputValue(page, plateResult.selector!, licensePlate!)
-        steps.push(`License plate entered using selector: ${plateResult.selector}`)
+        plateInputFound = true
+        finalSelector = plateResult.selector!
+        steps.push(`License plate entered using standard selector: ${plateResult.selector}`)
       } else {
-        // Enhanced debugging when selector fails
+        // Approach 2: Ultra-aggressive search
+        console.log(`[${traceId}] Standard selectors failed, trying aggressive search...`)
+        const aggressiveResult = await findElementAggressive(page, 'licensePlate', 10000)
+        
+        if (aggressiveResult.found) {
+          console.log(`[${traceId}] Aggressive search successful:`, aggressiveResult)
+          
+          if (aggressiveResult.inIframe) {
+            // Handle iframe case
+            const iframes = await page.$$('iframe')
+            const frame = await iframes[aggressiveResult.iframeIndex].contentFrame()
+            await setInputValue(frame, aggressiveResult.selector!, licensePlate!)
+            plateInputFound = true
+            finalSelector = `iframe[${aggressiveResult.iframeIndex}] ${aggressiveResult.selector}`
+            steps.push(`License plate entered in iframe using: ${finalSelector}`)
+          } else {
+            await setInputValue(page, aggressiveResult.selector!, licensePlate!)
+            plateInputFound = true
+            finalSelector = aggressiveResult.selector!
+            steps.push(`License plate entered using aggressive selector: ${finalSelector} (score: ${aggressiveResult.score})`)
+          }
+        } else {
+          // Approach 3: Desperate fallback - try ANY visible input
+          console.log(`[${traceId}] Aggressive search failed, trying desperate fallback...`)
+          const desperateResult = await page.evaluate(() => {
+            const allInputs = Array.from(document.querySelectorAll('input'))
+              .filter(input => {
+                const el = input as HTMLElement
+                const style = window.getComputedStyle(el)
+                return (
+                  style.display !== 'none' &&
+                  style.visibility !== 'hidden' &&
+                  el.offsetWidth > 0 &&
+                  el.offsetHeight > 0 &&
+                  !(input as HTMLInputElement).disabled
+                )
+              })
+            
+            if (allInputs.length > 0) {
+              const firstInput = allInputs[0] as HTMLInputElement
+              return {
+                found: true,
+                selector: firstInput.id ? `#${firstInput.id}` : 
+                         firstInput.name ? `input[name="${firstInput.name}"]` :
+                         `input:nth-of-type(1)`,
+                inputType: firstInput.type,
+                placeholder: firstInput.placeholder || '',
+                name: firstInput.name || '',
+                id: firstInput.id || ''
+              }
+            }
+            return { found: false }
+          })
+          
+          if (desperateResult.found) {
+            console.log(`[${traceId}] Desperate fallback found input:`, desperateResult)
+            await setInputValue(page, desperateResult.selector!, licensePlate!)
+            plateInputFound = true
+            finalSelector = desperateResult.selector!
+            steps.push(`License plate entered using desperate fallback: ${finalSelector}`)
+          }
+        }
+      }
+      
+      if (!plateInputFound) {
+        // Enhanced debugging when all strategies fail
         let debugScreenshot = undefined
         let pageState = undefined
         if (debug) {
-          pageState = await debugPageState(page, 'license_plate_selector_failed')
+          pageState = await debugPageState(page, 'all_license_plate_strategies_failed')
           debugScreenshot = await page.screenshot({ encoding: 'base64' })
-          console.log(`[${traceId}] License plate selector failed - screenshot captured`)
+          console.log(`[${traceId}] All license plate strategies failed - screenshot captured`)
         }
         
-        // Try one more time with a broader search for any text input
-        console.log(`[${traceId}] Trying fallback: looking for any visible text input`)
-        const fallbackResult = await page.evaluate(() => {
-          const textInputs = Array.from(document.querySelectorAll('input[type="text"], input:not([type])'))
-            .filter(input => (input as HTMLElement).offsetParent !== null) // Only visible inputs
-          
-          if (textInputs.length > 0) {
-            const input = textInputs[0] as HTMLInputElement
-            return {
-              found: true,
-              selector: `input:nth-of-type(${Array.from(document.querySelectorAll('input')).indexOf(input) + 1})`,
-              placeholder: input.placeholder,
-              name: input.name,
-              id: input.id
-            }
-          }
-          return { found: false }
-        })
-        
-        if (fallbackResult.found) {
-          console.log(`[${traceId}] Found fallback input:`, fallbackResult)
-          await setInputValue(page, fallbackResult.selector!, licensePlate!)
-          steps.push(`License plate entered using fallback selector: ${fallbackResult.selector}`)
-        } else {
-          return NextResponse.json({
-            success: false,
-            code: 'SELECTOR_NOT_FOUND',
-            message: 'License plate input not found',
-            retryable: false,
-            debug: debug ? { 
-              steps: [...steps, 'Enhanced debugging enabled - see logs for page state'],
-              attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
-              screenshotBase64: debugScreenshot,
-              pageState: pageState
-            } : undefined
-          } as QuoteError, { status: 500 })
-        }
+        return NextResponse.json({
+          success: false,
+          code: 'SELECTOR_NOT_FOUND',
+          message: 'License plate input not found after exhaustive search',
+          retryable: false,
+          debug: debug ? { 
+            steps: [...steps, 'All strategies attempted: standard selectors, aggressive search, iframe detection, desperate fallback'],
+            attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
+            screenshotBase64: debugScreenshot,
+            pageState: pageState,
+            strategiesUsed: ['standard', 'aggressive', 'iframe', 'desperate']
+          } : undefined
+        } as QuoteError, { status: 500 })
       }
     } else {
       // Fill vehicle details using enhanced selectors
@@ -374,19 +458,44 @@ export async function POST(req: NextRequest) {
       steps.push('GNC flag set')
     }
 
-    // Submit form using enhanced selector strategy
+    // Submit form using ultra-aggressive selector strategy
     let submitSuccess = false
+    console.log(`[${traceId}] Looking for submit button with aggressive strategy...`)
+    
+    // Try standard selectors first
     const searchResult = await findElement(page, MERIDIONAL_SELECTORS.searchButton, 5000)
     if (searchResult.found) {
       await page.click(searchResult.selector!)
       submitSuccess = true
-      steps.push(`Form submitted using: ${searchResult.selector}`)
+      steps.push(`Form submitted using standard selector: ${searchResult.selector}`)
     } else {
+      // Try next button
       const nextResult = await findElement(page, MERIDIONAL_SELECTORS.nextButton, 2000)
       if (nextResult.found) {
         await page.click(nextResult.selector!)
         submitSuccess = true
         steps.push(`Next button clicked using: ${nextResult.selector}`)
+      } else {
+        // Use aggressive submit button search
+        console.log(`[${traceId}] Standard submit selectors failed, trying aggressive search...`)
+        const aggressiveSubmitResult = await findElementAggressive(page, 'submit', 8000)
+        
+        if (aggressiveSubmitResult.found) {
+          console.log(`[${traceId}] Aggressive submit search successful:`, aggressiveSubmitResult)
+          
+          if (aggressiveSubmitResult.inIframe) {
+            // Handle iframe case
+            const iframes = await page.$$('iframe')
+            const frame = await iframes[aggressiveSubmitResult.iframeIndex].contentFrame()
+            await frame.click(aggressiveSubmitResult.selector!)
+            submitSuccess = true
+            steps.push(`Submit button clicked in iframe: ${aggressiveSubmitResult.selector}`)
+          } else {
+            await page.click(aggressiveSubmitResult.selector!)
+            submitSuccess = true
+            steps.push(`Submit button clicked using aggressive selector: ${aggressiveSubmitResult.selector}`)
+          }
+        }
       }
     }
 
@@ -397,10 +506,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         code: 'SELECTOR_NOT_FOUND',
-        message: 'Submit button not found',
+        message: 'Submit button not found after exhaustive search',
         retryable: false,
         debug: debug ? { 
-          steps: [...steps, 'Submit button debugging enabled'],
+          steps: [...steps, 'All submit strategies attempted: standard search, next button, aggressive search, iframe detection'],
           attemptedSearchSelectors: MERIDIONAL_SELECTORS.searchButton.split(', '),
           attemptedNextSelectors: MERIDIONAL_SELECTORS.nextButton.split(', ')
         } : undefined

@@ -282,6 +282,160 @@ export async function findElement(page: any, selectorString: string, timeout = 1
   return { found: false, selector: null, element: null }
 }
 
+// Ultra-aggressive element finder for critical form fields
+export async function findElementAggressive(page: any, elementType: 'licensePlate' | 'submit', timeout = 15000): Promise<any> {
+  console.log(`Starting aggressive search for ${elementType}`)
+  
+  // Strategy 1: Try standard selectors first
+  if (elementType === 'licensePlate') {
+    const standardResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, timeout / 3)
+    if (standardResult.found) return standardResult
+  } else if (elementType === 'submit') {
+    const standardResult = await findElement(page, MERIDIONAL_SELECTORS.searchButton, timeout / 3)
+    if (standardResult.found) return standardResult
+  }
+  
+  // Strategy 2: Dynamic evaluation with comprehensive search
+  const evaluationResult = await page.evaluate((type: string) => {
+    const isVisible = (el: HTMLElement): boolean => {
+      if (!el) return false
+      const style = window.getComputedStyle(el)
+      return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        style.opacity !== '0' &&
+        el.offsetWidth > 0 &&
+        el.offsetHeight > 0
+      )
+    }
+    
+    if (type === 'licensePlate') {
+      // Find any visible text input that could be a license plate field
+      const candidates = Array.from(document.querySelectorAll('input')).filter(input => {
+        const el = input as HTMLInputElement
+        const type = el.type.toLowerCase()
+        return (
+          (type === 'text' || type === '' || !type) &&
+          isVisible(el) &&
+          !el.disabled &&
+          !el.readOnly
+        )
+      }) as HTMLInputElement[]
+      
+      // Score candidates by likelihood of being license plate input
+      const scoredCandidates = candidates.map((input, index) => {
+        let score = 0
+        const attrs = [
+          input.name?.toLowerCase() || '',
+          input.id?.toLowerCase() || '',
+          input.placeholder?.toLowerCase() || '',
+          input.className?.toLowerCase() || ''
+        ].join(' ')
+        
+        // High score indicators
+        if (attrs.includes('patente')) score += 100
+        if (attrs.includes('dominio')) score += 90
+        if (attrs.includes('placa')) score += 80
+        if (attrs.includes('plate')) score += 70
+        
+        // Medium score indicators
+        if (attrs.includes('aaa') || attrs.includes('123')) score += 50
+        if (input.maxLength >= 6 && input.maxLength <= 8) score += 40
+        if (attrs.includes('vehiculo') || attrs.includes('auto')) score += 30
+        
+        // Position bonus (first visible input gets bonus)
+        if (index === 0) score += 20
+        
+        // Penalty for unlikely fields
+        if (attrs.includes('email') || attrs.includes('mail')) score -= 50
+        if (attrs.includes('telefono') || attrs.includes('phone')) score -= 50
+        if (attrs.includes('nombre') || attrs.includes('name')) score -= 30
+        
+        return {
+          input,
+          score,
+          selector: input.id ? `#${input.id}` : 
+                   input.name ? `input[name="${input.name}"]` :
+                   `input:nth-of-type(${Array.from(document.querySelectorAll('input')).indexOf(input) + 1})`,
+          attributes: attrs
+        }
+      })
+      
+      // Sort by score and return best candidate
+      scoredCandidates.sort((a, b) => b.score - a.score)
+      
+      if (scoredCandidates.length > 0) {
+        const best = scoredCandidates[0]
+        return {
+          found: true,
+          selector: best.selector,
+          score: best.score,
+          attributes: best.attributes,
+          totalCandidates: candidates.length
+        }
+      }
+      
+    } else if (type === 'submit') {
+      // Find any visible button that could submit the form
+      const buttons = Array.from(document.querySelectorAll('button, input[type="submit"], input[type="button"]'))
+        .filter(btn => isVisible(btn as HTMLElement)) as HTMLElement[]
+      
+      for (const button of buttons) {
+        const text = (button.textContent || '').toLowerCase()
+        const attrs = [
+          (button as HTMLElement).className?.toLowerCase() || '',
+          (button as HTMLInputElement).value?.toLowerCase() || ''
+        ].join(' ')
+        
+        if (
+          text.includes('buscar') || 
+          text.includes('cotizar') || 
+          text.includes('siguiente') ||
+          text.includes('continuar') ||
+          attrs.includes('submit') ||
+          attrs.includes('search') ||
+          (button as HTMLButtonElement).type === 'submit'
+        ) {
+          return {
+            found: true,
+            selector: button.id ? `#${button.id}` : 
+                     `button:nth-of-type(${Array.from(document.querySelectorAll('button')).indexOf(button as HTMLButtonElement) + 1})`,
+            text: button.textContent?.trim()
+          }
+        }
+      }
+    }
+    
+    return { found: false }
+  }, elementType)
+  
+  if (evaluationResult.found) {
+    console.log(`Aggressive search found ${elementType}:`, evaluationResult)
+    return evaluationResult
+  }
+  
+  // Strategy 3: Check for iframes
+  const iframes = await page.$$('iframe')
+  for (let i = 0; i < iframes.length; i++) {
+    try {
+      const frame = await iframes[i].contentFrame()
+      if (frame) {
+        console.log(`Checking iframe ${i} for ${elementType}`)
+        const frameResult: any = await findElementAggressive(frame, elementType, timeout / 3)
+        if (frameResult.found) {
+          console.log(`Found ${elementType} in iframe ${i}`)
+          return { ...frameResult, inIframe: true, iframeIndex: i }
+        }
+      }
+    } catch (error) {
+      console.log(`Could not access iframe ${i}:`, error)
+    }
+  }
+  
+  console.log(`Aggressive search failed for ${elementType}`)
+  return { found: false }
+}
+
 // Debug page state - capture available form elements
 export async function debugPageState(page: any, stepName: string) {
   try {
