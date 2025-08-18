@@ -195,6 +195,14 @@ export async function POST(req: NextRequest) {
       steps.push('Cookie banner accepted')
     }
 
+    // Wait for form elements to load (increased wait time)
+    await delay(3000)
+    
+    // Debug: capture page state after cookies and initial wait
+    if (debug) {
+      await debugPageState(page, 'after_cookie_handling')
+    }
+
     // Handle mode selection
     if (mode === 'byVehicle') {
       const toggleFound = await waitForSelector(page, MERIDIONAL_SELECTORS.withoutPlateToggle, 5000)
@@ -210,30 +218,58 @@ export async function POST(req: NextRequest) {
     // Fill form based on mode
     if (mode === 'byPlate') {
       // Fill license plate using enhanced selector strategy
-      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 5000)
+      console.log(`[${traceId}] Looking for license plate input...`)
+      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 10000)
       if (plateResult.found) {
         await setInputValue(page, plateResult.selector!, licensePlate!)
         steps.push(`License plate entered using selector: ${plateResult.selector}`)
       } else {
         // Enhanced debugging when selector fails
         let debugScreenshot = undefined
+        let pageState = undefined
         if (debug) {
-          await debugPageState(page, 'license_plate_selector_failed')
+          pageState = await debugPageState(page, 'license_plate_selector_failed')
           debugScreenshot = await page.screenshot({ encoding: 'base64' })
           console.log(`[${traceId}] License plate selector failed - screenshot captured`)
         }
         
-        return NextResponse.json({
-          success: false,
-          code: 'SELECTOR_NOT_FOUND',
-          message: 'License plate input not found',
-          retryable: false,
-          debug: debug ? { 
-            steps: [...steps, 'Enhanced debugging enabled - see logs for page state'],
-            attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
-            screenshotBase64: debugScreenshot
-          } : undefined
-        } as QuoteError, { status: 500 })
+        // Try one more time with a broader search for any text input
+        console.log(`[${traceId}] Trying fallback: looking for any visible text input`)
+        const fallbackResult = await page.evaluate(() => {
+          const textInputs = Array.from(document.querySelectorAll('input[type="text"], input:not([type])'))
+            .filter(input => (input as HTMLElement).offsetParent !== null) // Only visible inputs
+          
+          if (textInputs.length > 0) {
+            const input = textInputs[0] as HTMLInputElement
+            return {
+              found: true,
+              selector: `input:nth-of-type(${Array.from(document.querySelectorAll('input')).indexOf(input) + 1})`,
+              placeholder: input.placeholder,
+              name: input.name,
+              id: input.id
+            }
+          }
+          return { found: false }
+        })
+        
+        if (fallbackResult.found) {
+          console.log(`[${traceId}] Found fallback input:`, fallbackResult)
+          await setInputValue(page, fallbackResult.selector!, licensePlate!)
+          steps.push(`License plate entered using fallback selector: ${fallbackResult.selector}`)
+        } else {
+          return NextResponse.json({
+            success: false,
+            code: 'SELECTOR_NOT_FOUND',
+            message: 'License plate input not found',
+            retryable: false,
+            debug: debug ? { 
+              steps: [...steps, 'Enhanced debugging enabled - see logs for page state'],
+              attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
+              screenshotBase64: debugScreenshot,
+              pageState: pageState
+            } : undefined
+          } as QuoteError, { status: 500 })
+        }
       }
     } else {
       // Fill vehicle details using enhanced selectors

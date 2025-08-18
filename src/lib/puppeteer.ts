@@ -127,13 +127,20 @@ export const MERIDIONAL_SELECTORS = {
     'input[id*="dominio"]',
     'input[placeholder*="placa"]',
     'input[name*="placa"]',
-    'input[type="text"]:first-of-type',
+    'input[placeholder*="AAA"]',
+    'input[placeholder*="123"]', 
     'input[maxlength="6"]',
     'input[maxlength="7"]',
     'input[maxlength="8"]',
+    'input[type="text"]:first-of-type',
+    'input[type="text"]:nth-of-type(1)',
     '.form-control:first-of-type',
     '.input-field:first-of-type input',
-    'form input[type="text"]:nth-of-type(1)'
+    'form input[type="text"]:nth-of-type(1)',
+    'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):first-of-type',
+    'input[type="text"]',
+    'input[class*="form"]',
+    'input[class*="input"]'
   ].join(', '),
   
   yearInput: [
@@ -280,40 +287,69 @@ export async function debugPageState(page: any, stepName: string) {
   try {
     const debugInfo = await page.evaluate(() => {
       const inputs = Array.from(document.querySelectorAll('input')).map(input => ({
-        type: input.type,
-        name: input.name || '',
-        id: input.id || '',
-        placeholder: input.placeholder || '',
-        className: input.className || '',
-        value: input.value || ''
+        type: (input as HTMLInputElement).type,
+        name: (input as HTMLInputElement).name || '',
+        id: (input as HTMLInputElement).id || '',
+        placeholder: (input as HTMLInputElement).placeholder || '',
+        className: (input as HTMLInputElement).className || '',
+        value: (input as HTMLInputElement).value || '',
+        maxLength: (input as HTMLInputElement).maxLength || 0,
+        visible: (input as HTMLElement).offsetParent !== null,
+        tagName: input.tagName
       }))
       
       const selects = Array.from(document.querySelectorAll('select')).map(select => ({
-        name: select.name || '',
-        id: select.id || '',
-        className: select.className || '',
-        options: Array.from(select.options).map(opt => opt.text).slice(0, 5) // First 5 options
+        name: (select as HTMLSelectElement).name || '',
+        id: (select as HTMLSelectElement).id || '',
+        className: (select as HTMLSelectElement).className || '',
+        options: Array.from((select as HTMLSelectElement).options).map(opt => opt.text).slice(0, 5), // First 5 options
+        visible: (select as HTMLElement).offsetParent !== null
       }))
       
       const buttons = Array.from(document.querySelectorAll('button')).map(button => ({
-        type: button.type,
-        className: button.className || '',
-        textContent: (button.textContent || '').trim().slice(0, 50)
+        type: (button as HTMLButtonElement).type,
+        className: (button as HTMLButtonElement).className || '',
+        textContent: (button as HTMLButtonElement).textContent?.trim() || '',
+        visible: (button as HTMLElement).offsetParent !== null
+      }))
+
+      const forms = Array.from(document.querySelectorAll('form')).map((form, index) => ({
+        index,
+        id: (form as HTMLFormElement).id || '',
+        className: (form as HTMLFormElement).className || '',
+        action: (form as HTMLFormElement).action || '',
+        inputCount: form.querySelectorAll('input').length,
+        visible: (form as HTMLElement).offsetParent !== null
+      }))
+
+      const textInputs = Array.from(document.querySelectorAll('input[type="text"], input:not([type])')).map((input, index) => ({
+        index,
+        id: (input as HTMLInputElement).id || '',
+        name: (input as HTMLInputElement).name || '',
+        placeholder: (input as HTMLInputElement).placeholder || '',
+        className: (input as HTMLInputElement).className || '',
+        visible: (input as HTMLElement).offsetParent !== null,
+        selector: `input:nth-of-type(${index + 1})`
       }))
       
       return {
         url: window.location.href,
         title: document.title,
-        inputs: inputs.slice(0, 10), // First 10 inputs
-        selects: selects.slice(0, 5), // First 5 selects
-        buttons: buttons.slice(0, 10) // First 10 buttons
+        totalInputs: inputs.length,
+        visibleInputs: inputs.filter(i => i.visible).length,
+        textInputs: textInputs,
+        inputs: inputs,
+        selects: selects,
+        buttons: buttons,
+        forms: forms,
+        bodyHTML: document.body.innerHTML.substring(0, 2000) // First 2000 chars
       }
     })
     
-    console.log(`[DEBUG ${stepName}]`, JSON.stringify(debugInfo, null, 2))
+    console.log(`[DEBUG ${stepName}] Page state:`, JSON.stringify(debugInfo, null, 2))
     return debugInfo
   } catch (error) {
-    console.log(`[DEBUG ${stepName}] Failed to capture page state:`, error)
+    console.error(`[DEBUG ${stepName}] Failed to capture page state:`, error)
     return null
   }
 }
