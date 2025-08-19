@@ -105,6 +105,22 @@ export function PersonalInfoForm() {
                         />
                     </div>
                 )}
+                {state.quoteType === 'Vehiculo' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="birthDate">Fecha de nacimiento (DD/MM/AAAA) *</Label>
+                        <Input
+                            id="birthDate"
+                            name="birthDate"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$"
+                            value={personalInfo.birthDate || ''}
+                            onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                            placeholder="31/12/1990"
+                            required
+                        />
+                    </div>
+                )}
                 {state.quoteType === 'Activar_app' && (
                     <div className="space-y-1">
                         <Label htmlFor="postalCode">Código Postal *</Label>
@@ -130,6 +146,21 @@ export function PersonalInfoForm() {
                                 <span className="text-green-600">Zona OK (ID {state.zoneId})</span>
                             )}
                         </p>
+                    </div>
+                )}
+                {state.quoteType === 'Vehiculo' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="postalCode">Código Postal *</Label>
+                        <Input
+                            id="postalCode"
+                            name="postalCode"
+                            type="text"
+                            inputMode="numeric"
+                            value={state.postalCode}
+                            onChange={(e) => actions.setPostalCode(e.target.value.replace(/[^0-9]/g, ''))}
+                            placeholder="Ej: 1878"
+                            required
+                        />
                     </div>
                 )}
             </div>

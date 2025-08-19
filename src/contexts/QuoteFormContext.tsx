@@ -25,6 +25,7 @@ export interface PersonalInfo {
     phone: string
     message: string
     dni?: string
+    birthDate?: string // DD/MM/AAAA
 }
 
 // Types for Meridional vehicle quotes
@@ -141,6 +142,7 @@ const initialState: QuoteFormState = {
         phone: '',
         message: '',
         dni: '',
+    birthDate: '',
     },
     marca: { codigo: '', nome: '' },
     marcas: [],

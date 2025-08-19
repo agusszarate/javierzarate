@@ -1,736 +1,139 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { 
-  createBrowser, 
-  MERIDIONAL_SELECTORS, 
-  waitForSelector,
-  findElement,
-  findElementAggressive,
-  debugPageState,
-  delay, 
-  generateTraceId, 
-  setInputValue, 
-  selectOption 
-} from '@/lib/puppeteer'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 
-// Vercel serverless configuration
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Types for the API
-interface QuoteRequest {
-  mode: 'byPlate' | 'byVehicle'
+type VehicleMode = 'byPlate' | 'byVehicle'
+type PaymentMethod = 'Tarjeta de crédito' | 'CBU'
+
+interface RequestBody {
+  mode: VehicleMode
+  paymentMethod: PaymentMethod
   licensePlate?: string
-  vehicle?: {
-    year: number
-    brand: string
-    model: string
-    version?: string
-  }
-  paymentMethod?: 'Tarjeta de crédito' | 'CBU'
-  usage?: { isParticular: boolean }
+  vehicle?: { year?: number; brand?: string; model?: string; version?: string }
+  usage?: { isParticular?: boolean }
   flags?: { isZeroKm?: boolean; hasGNC?: boolean }
-  owner?: {
-    documentType?: 'DNI' | 'CUIT'
-    documentNumber?: string
-    birthDate?: string
-    email?: string
-    phone?: string
+  owner: {
+    documentType?: 'DNI'
+    documentNumber: string
+    birthDate: string // DD/MM/AAAA
+    email: string
+    phone: string
   }
-  location?: {
-    postalCode?: string
-    province?: string
-    locality?: string
-  }
-  sourceUrl?: string
+  location: { postalCode: string }
   debug?: boolean
 }
 
-interface QuoteResponse {
-  success: true
-  insurer: string
-  inputsEcho: any
-  results: Array<{
-    planName: string
-    monthly: number
-    currency: string
-    details?: string
-    franchise?: string
-  }>
-  metadata: {
-    quotedAt: string
-    durationMs: number
-    pageVersion?: string
-    traceId: string
-  }
-  debug?: {
-    steps?: string[]
-    screenshotBase64?: string
-    htmlSnippet?: string
-  }
+function normalizePayment(method: PaymentMethod) {
+  // Meridional: 2 => Tarjeta de crédito, 4 => CBU
+  return method === 'CBU' ? '4' : '2'
 }
 
-interface QuoteError {
-  success: false
-  code: string
-  message: string
-  retryable: boolean
-  debug?: {
-    steps?: string[]
-    screenshotBase64?: string
-    htmlSnippet?: string
-  }
+function toISODate(ddmmaaaa: string) {
+  const m = ddmmaaaa.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!m) return null
+  const [_, dd, mm, yyyy] = m
+  return `${yyyy}-${mm}-${dd}`
 }
-
-const DEFAULT_SOURCE_URL = 'https://productos.meridionalseguros.seg.ar/cotizacion/auto/AR160101MOFFAUAQDILMWB/seo_cotizacion'
 
 export async function POST(req: NextRequest) {
-  const startTime = Date.now()
-  const traceId = generateTraceId()
-  const steps: string[] = []
-  let browser: any = null
-  let page: any = null
-  let debug = false
-
-  console.log(`[${traceId}] Starting Meridional quote request`)
-
+  const startedAt = Date.now()
+  const traceId = Math.random().toString(36).slice(2)
   try {
-    // Parse and validate request
-    const body: QuoteRequest = await req.json()
-    const {
-      mode = 'byPlate',
-      licensePlate,
-      vehicle,
-      paymentMethod = 'Tarjeta de crédito',
-      usage = { isParticular: true },
-      flags = {},
-      owner,
-      location,
-      sourceUrl = DEFAULT_SOURCE_URL,
-      debug: debugFromBody = false
-    } = body
+    const body = (await req.json()) as RequestBody
+    const errors: string[] = []
 
-    debug = debugFromBody
-    steps.push('Request parsed and validated')
+    if (!body) return NextResponse.json({ success: false, message: 'EMPTY_BODY' }, { status: 400 })
+    if (!body.mode) errors.push('MISSING_MODE')
+    if (!body.paymentMethod) errors.push('MISSING_PAYMENT_METHOD')
+    if (!body.owner?.documentNumber) errors.push('MISSING_DNI')
+    if (!body.owner?.birthDate) errors.push('MISSING_BIRTHDATE')
+    if (!body.location?.postalCode) errors.push('MISSING_POSTAL_CODE')
+    if (body.mode === 'byPlate' && !body.licensePlate) errors.push('MISSING_LICENSE_PLATE')
+    if (body.mode === 'byVehicle' && (!body.vehicle?.year || !body.vehicle?.brand || !body.vehicle?.model)) errors.push('MISSING_VEHICLE_FIELDS')
+    if (errors.length) return NextResponse.json({ success: false, message: 'VALIDATION_ERROR', errors }, { status: 400 })
 
-    // Validate required fields
-    if (mode === 'byPlate' && !licensePlate) {
-      return NextResponse.json({
-        success: false,
-        code: 'VALIDATION_ERROR',
-        message: 'License plate is required for byPlate mode',
-        retryable: false
-      } as QuoteError, { status: 422 })
-    }
+    const meridionalUrl = process.env.MERIDIONAL_QUOTE_URL || 'https://meridionalseguros.seg.ar/auto-cotizador'
 
-    if (mode === 'byVehicle' && (!vehicle?.year || !vehicle?.brand || !vehicle?.model)) {
-      return NextResponse.json({
-        success: false,
-        code: 'VALIDATION_ERROR',
-        message: 'Year, brand, and model are required for byVehicle mode',
-        retryable: false
-      } as QuoteError, { status: 422 })
-    }
+    const executablePath = await chromium.executablePath()
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: chromium.headless,
+    })
 
-    steps.push('Input validation completed')
-
-    // Launch browser
-    console.log(`[${traceId}] Launching browser`)
-    try {
-      browser = await createBrowser()
-      page = await browser.newPage()
-    } catch (error: any) {
-      console.error(`[${traceId}] Browser launch failed:`, error)
-      
-      // Specific handling for Chromium binary issues
-      if (error.message?.includes('bin') || error.message?.includes('executablePath') || error.message?.includes('does not exist')) {
-        return NextResponse.json({
-          success: false,
-          code: 'BROWSER_LAUNCH_FAILED',
-          message: 'Browser launch failed - Chromium binary issue in serverless environment',
-          retryable: true,
-          debug: debug ? { 
-            steps: [...steps, `Browser launch error: ${error.message}`],
-            errorType: 'CHROMIUM_BINARY_ERROR'
-          } : undefined
-        } as QuoteError, { status: 500 })
-      }
-      
-      // Re-throw for other types of errors
-      throw error
-    }
-
-    // Set realistic headers
+    const page = await browser.newPage()
     await page.setUserAgent(
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     )
-    await page.setExtraHTTPHeaders({
-      'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
-    })
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'es-AR,es;q=0.9' })
 
-    // Set timezone
-    await page.emulateTimezone('America/Argentina/Buenos_Aires')
+    const timeZone = 'America/Argentina/Buenos_Aires'
+    try { await page.emulateTimezone(timeZone) } catch {}
 
-    steps.push('Browser launched and configured')
+    // Navigate
+    await page.goto(meridionalUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
 
-    // Navigate to the quote page
-    console.log(`[${traceId}] Navigating to ${sourceUrl}`)
-    await page.goto(sourceUrl, { 
-      waitUntil: 'networkidle2', 
-      timeout: 30000 
-    })
+    // TODO: Fill Step 1 and Step 2 using concrete selectors.
+    // We'll return a mocked response structure for now to wire the frontend.
 
-    steps.push('Page loaded')
-
-    // Debug: capture initial page state
-    if (debug) {
-      await debugPageState(page, 'after_page_load')
-    }
-
-    // Accept cookies if banner appears
-    await delay(2000)
-    const cookieAcceptFound = await waitForSelector(page, MERIDIONAL_SELECTORS.cookieAccept, 3000)
-    if (cookieAcceptFound) {
-      await page.click(MERIDIONAL_SELECTORS.cookieAccept)
-      await delay(1000)
-      steps.push('Cookie banner accepted')
-    }
-
-    // Additional popup/overlay dismissal strategies
-    await delay(1000)
-    
-    // Try to dismiss any modals or overlays that might be blocking the form
-    const overlayDismissed = await page.evaluate(() => {
-      const overlaySelectors = [
-        '.modal-backdrop',
-        '.overlay',
-        '[class*="modal"]',
-        '[class*="popup"]',
-        '[class*="dialog"]',
-        '.close',
-        '[aria-label="Close"]',
-        '[aria-label="Cerrar"]'
-      ]
-      
-      for (const selector of overlaySelectors) {
-        const elements = document.querySelectorAll(selector)
-        // Use Array.from to handle NodeListOf<Element>
-        for (const element of Array.from(elements)) {
-          if ((element as HTMLElement).offsetParent !== null) {
-            (element as HTMLElement).click()
-            return true
-          }
-        }
-      }
-      return false
-    })
-    
-    if (overlayDismissed) {
-      await delay(1000)
-      steps.push('Overlay/modal dismissed')
-    }
-
-    // Wait for form elements to load (increased wait time)
-    await delay(3000)
-    
-    // Debug: capture page state after cookies and initial wait
-    if (debug) {
-      await debugPageState(page, 'after_cookie_handling')
-    }
-
-    // Handle mode selection
-    if (mode === 'byVehicle') {
-      const toggleFound = await waitForSelector(page, MERIDIONAL_SELECTORS.withoutPlateToggle, 5000)
-      if (toggleFound) {
-        await page.click(MERIDIONAL_SELECTORS.withoutPlateToggle)
-        await delay(1000)
-        steps.push('Switched to byVehicle mode')
-      } else {
-        console.log(`[${traceId}] Warning: Could not find mode toggle`)
-      }
-    }
-
-    // Fill form based on mode
-    if (mode === 'byPlate') {
-      // Fill license plate using ultra-aggressive strategy
-      console.log(`[${traceId}] Looking for license plate input with aggressive strategy...`)
-      
-      // Try multiple approaches with increasing aggressiveness
-      let plateInputFound = false
-      let finalSelector = ''
-      
-      // Approach 1: Standard enhanced selectors
-      const plateResult = await findElement(page, MERIDIONAL_SELECTORS.licensePlateInput, 8000)
-      if (plateResult.found) {
-        await setInputValue(page, plateResult.selector!, licensePlate!)
-        plateInputFound = true
-        finalSelector = plateResult.selector!
-        steps.push(`License plate entered using standard selector: ${plateResult.selector}`)
-      } else {
-        // Approach 2: Ultra-aggressive search
-        console.log(`[${traceId}] Standard selectors failed, trying aggressive search...`)
-        const aggressiveResult = await findElementAggressive(page, 'licensePlate', 10000)
-        
-        if (aggressiveResult.found) {
-          console.log(`[${traceId}] Aggressive search successful:`, aggressiveResult)
-          
-          if (aggressiveResult.inIframe) {
-            // Handle iframe case
-            const iframes = await page.$$('iframe')
-            const frame = await iframes[aggressiveResult.iframeIndex].contentFrame()
-            await setInputValue(frame, aggressiveResult.selector!, licensePlate!)
-            plateInputFound = true
-            finalSelector = `iframe[${aggressiveResult.iframeIndex}] ${aggressiveResult.selector}`
-            steps.push(`License plate entered in iframe using: ${finalSelector}`)
-          } else {
-            await setInputValue(page, aggressiveResult.selector!, licensePlate!)
-            plateInputFound = true
-            finalSelector = aggressiveResult.selector!
-            steps.push(`License plate entered using aggressive selector: ${finalSelector} (score: ${aggressiveResult.score})`)
-          }
-        } else {
-          // Approach 3: Desperate fallback - try ANY visible input
-          console.log(`[${traceId}] Aggressive search failed, trying desperate fallback...`)
-          const desperateResult = await page.evaluate(() => {
-            const allInputs = Array.from(document.querySelectorAll('input'))
-              .filter(input => {
-                const el = input as HTMLElement
-                const style = window.getComputedStyle(el)
-                return (
-                  style.display !== 'none' &&
-                  style.visibility !== 'hidden' &&
-                  el.offsetWidth > 0 &&
-                  el.offsetHeight > 0 &&
-                  !(input as HTMLInputElement).disabled
-                )
-              })
-            
-            if (allInputs.length > 0) {
-              const firstInput = allInputs[0] as HTMLInputElement
-              return {
-                found: true,
-                selector: firstInput.id ? `#${firstInput.id}` : 
-                         firstInput.name ? `input[name="${firstInput.name}"]` :
-                         `input:nth-of-type(1)`,
-                inputType: firstInput.type,
-                placeholder: firstInput.placeholder || '',
-                name: firstInput.name || '',
-                id: firstInput.id || ''
-              }
-            }
-            return { found: false }
-          })
-          
-          if (desperateResult.found) {
-            console.log(`[${traceId}] Desperate fallback found input:`, desperateResult)
-            await setInputValue(page, desperateResult.selector!, licensePlate!)
-            plateInputFound = true
-            finalSelector = desperateResult.selector!
-            steps.push(`License plate entered using desperate fallback: ${finalSelector}`)
-          }
-        }
-      }
-      
-      if (!plateInputFound) {
-        // Enhanced debugging when all strategies fail
-        let debugScreenshot = undefined
-        let pageState = undefined
-        if (debug) {
-          pageState = await debugPageState(page, 'all_license_plate_strategies_failed')
-          debugScreenshot = await page.screenshot({ encoding: 'base64' })
-          console.log(`[${traceId}] All license plate strategies failed - screenshot captured`)
-        }
-        
-        return NextResponse.json({
-          success: false,
-          code: 'SELECTOR_NOT_FOUND',
-          message: 'License plate input not found after exhaustive search',
-          retryable: false,
-          debug: debug ? { 
-            steps: [...steps, 'All strategies attempted: standard selectors, aggressive search, iframe detection, desperate fallback'],
-            attemptedSelectors: MERIDIONAL_SELECTORS.licensePlateInput.split(', '),
-            screenshotBase64: debugScreenshot,
-            pageState: pageState,
-            strategiesUsed: ['standard', 'aggressive', 'iframe', 'desperate']
-          } : undefined
-        } as QuoteError, { status: 500 })
-      }
-    } else {
-      // Fill vehicle details using enhanced selectors
-      const yearResult = await findElement(page, MERIDIONAL_SELECTORS.yearInput, 5000)
-      if (yearResult.found) {
-        await setInputValue(page, yearResult.selector!, vehicle!.year.toString())
-        steps.push(`Vehicle year entered using selector: ${yearResult.selector}`)
-      }
-
-      // Try both input and select for brand
-      let brandFilled = false
-      const brandInputResult = await findElement(page, MERIDIONAL_SELECTORS.brandInput, 2000)
-      if (brandInputResult.found) {
-        await setInputValue(page, brandInputResult.selector!, vehicle!.brand)
-        brandFilled = true
-        steps.push(`Brand entered via input: ${brandInputResult.selector}`)
-      } else {
-        const brandSelectResult = await findElement(page, MERIDIONAL_SELECTORS.brandSelect, 2000)
-        if (brandSelectResult.found) {
-          await selectOption(page, brandSelectResult.selector!, vehicle!.brand)
-          brandFilled = true
-          steps.push(`Brand selected via select: ${brandSelectResult.selector}`)
-        }
-      }
-
-      if (!brandFilled) {
-        if (debug) {
-          await debugPageState(page, 'brand_selector_failed')
-        }
-        return NextResponse.json({
-          success: false,
-          code: 'SELECTOR_NOT_FOUND',
-          message: 'Brand input/select not found',
-          retryable: false,
-          debug: debug ? { 
-            steps: [...steps, 'Brand selector debugging enabled'],
-            attemptedInputSelectors: MERIDIONAL_SELECTORS.brandInput.split(', '),
-            attemptedSelectSelectors: MERIDIONAL_SELECTORS.brandSelect.split(', ')
-          } : undefined
-        } as QuoteError, { status: 500 })
-      }
-
-      // Try both input and select for model
-      let modelFilled = false
-      await delay(1000) // Wait for dependent field to load
-      const modelInputResult = await findElement(page, MERIDIONAL_SELECTORS.modelInput, 2000)
-      if (modelInputResult.found) {
-        await setInputValue(page, modelInputResult.selector!, vehicle!.model)
-        modelFilled = true
-        steps.push(`Model entered via input: ${modelInputResult.selector}`)
-      } else {
-        const modelSelectResult = await findElement(page, MERIDIONAL_SELECTORS.modelSelect, 2000)
-        if (modelSelectResult.found) {
-          await selectOption(page, modelSelectResult.selector!, vehicle!.model)
-          modelFilled = true
-          steps.push(`Model selected via select: ${modelSelectResult.selector}`)
-        }
-      }
-
-      if (modelFilled) {
-        steps.push('Vehicle model entered successfully')
-      }
-
-      // Version (optional)
-      if (vehicle!.version) {
-        const versionResult = await findElement(page, MERIDIONAL_SELECTORS.versionInput, 2000)
-        if (versionResult.found) {
-          await setInputValue(page, versionResult.selector!, vehicle!.version)
-          steps.push(`Vehicle version entered using: ${versionResult.selector}`)
-        }
-      }
-    }
-
-    // Set payment method
-    if (await waitForSelector(page, MERIDIONAL_SELECTORS.paymentMethodSelect, 3000)) {
-      await selectOption(page, MERIDIONAL_SELECTORS.paymentMethodSelect, paymentMethod)
-      steps.push(`Payment method set to ${paymentMethod}`)
-    }
-
-    // Set usage flags
-    if (await waitForSelector(page, MERIDIONAL_SELECTORS.particularUseCheckbox, 2000)) {
-      const isChecked = await page.evaluate((selector: string) => {
-        const checkbox = document.querySelector(selector) as HTMLInputElement
-        return checkbox?.checked || false
-      }, MERIDIONAL_SELECTORS.particularUseCheckbox)
-
-      if (usage.isParticular !== isChecked) {
-        await page.click(MERIDIONAL_SELECTORS.particularUseCheckbox)
-        steps.push(`Usage set to particular: ${usage.isParticular}`)
-      }
-    }
-
-    // Set 0km flag
-    if (flags.isZeroKm && await waitForSelector(page, MERIDIONAL_SELECTORS.zeroKmCheckbox, 2000)) {
-      await page.click(MERIDIONAL_SELECTORS.zeroKmCheckbox)
-      steps.push('0km flag set')
-    }
-
-    // Set GNC flag
-    if (flags.hasGNC && await waitForSelector(page, MERIDIONAL_SELECTORS.gncCheckbox, 2000)) {
-      await page.click(MERIDIONAL_SELECTORS.gncCheckbox)
-      steps.push('GNC flag set')
-    }
-
-    // Submit form using ultra-aggressive selector strategy
-    let submitSuccess = false
-    console.log(`[${traceId}] Looking for submit button with aggressive strategy...`)
-    
-    // Try standard selectors first
-    const searchResult = await findElement(page, MERIDIONAL_SELECTORS.searchButton, 5000)
-    if (searchResult.found) {
-      await page.click(searchResult.selector!)
-      submitSuccess = true
-      steps.push(`Form submitted using standard selector: ${searchResult.selector}`)
-    } else {
-      // Try next button
-      const nextResult = await findElement(page, MERIDIONAL_SELECTORS.nextButton, 2000)
-      if (nextResult.found) {
-        await page.click(nextResult.selector!)
-        submitSuccess = true
-        steps.push(`Next button clicked using: ${nextResult.selector}`)
-      } else {
-        // Use aggressive submit button search
-        console.log(`[${traceId}] Standard submit selectors failed, trying aggressive search...`)
-        const aggressiveSubmitResult = await findElementAggressive(page, 'submit', 8000)
-        
-        if (aggressiveSubmitResult.found) {
-          console.log(`[${traceId}] Aggressive submit search successful:`, aggressiveSubmitResult)
-          
-          if (aggressiveSubmitResult.inIframe) {
-            // Handle iframe case
-            const iframes = await page.$$('iframe')
-            const frame = await iframes[aggressiveSubmitResult.iframeIndex].contentFrame()
-            await frame.click(aggressiveSubmitResult.selector!)
-            submitSuccess = true
-            steps.push(`Submit button clicked in iframe: ${aggressiveSubmitResult.selector}`)
-          } else {
-            await page.click(aggressiveSubmitResult.selector!)
-            submitSuccess = true
-            steps.push(`Submit button clicked using aggressive selector: ${aggressiveSubmitResult.selector}`)
-          }
-        }
-      }
-    }
-
-    if (!submitSuccess) {
-      if (debug) {
-        await debugPageState(page, 'submit_button_failed')
-      }
-      return NextResponse.json({
-        success: false,
-        code: 'SELECTOR_NOT_FOUND',
-        message: 'Submit button not found after exhaustive search',
-        retryable: false,
-        debug: debug ? { 
-          steps: [...steps, 'All submit strategies attempted: standard search, next button, aggressive search, iframe detection'],
-          attemptedSearchSelectors: MERIDIONAL_SELECTORS.searchButton.split(', '),
-          attemptedNextSelectors: MERIDIONAL_SELECTORS.nextButton.split(', ')
-        } : undefined
-      } as QuoteError, { status: 500 })
-    }
-
-    // Wait for results or additional form
-    await delay(5000)
-
-    // Check if additional personal info is required
-    const needsMoreInfo = await page.evaluate(() => {
-      const forms = document.querySelectorAll('form')
-      const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]')
-      return forms.length > 0 && inputs.length > 2
-    })
-
-    if (needsMoreInfo && (owner || location)) {
-      // Fill additional information if provided
-      steps.push('Additional personal information required')
-      
-      if (owner?.email && await waitForSelector(page, 'input[type="email"]', 3000)) {
-        await setInputValue(page, 'input[type="email"]', owner.email)
-        steps.push('Email filled')
-      }
-
-      if (owner?.phone && await waitForSelector(page, 'input[type="tel"]', 2000)) {
-        await setInputValue(page, 'input[type="tel"]', owner.phone)
-        steps.push('Phone filled')
-      }
-
-      if (location?.postalCode && await waitForSelector(page, 'input[name*="postal"], input[id*="postal"]', 2000)) {
-        await setInputValue(page, 'input[name*="postal"], input[id*="postal"]', location.postalCode)
-        steps.push('Postal code filled')
-      }
-
-      // Submit additional info
-      if (await waitForSelector(page, MERIDIONAL_SELECTORS.nextButton, 3000)) {
-        await page.click(MERIDIONAL_SELECTORS.nextButton)
-        await delay(5000)
-        steps.push('Additional info submitted')
-      }
-    } else if (needsMoreInfo) {
-      return NextResponse.json({
-        success: false,
-        code: 'VALIDATION_ERROR',
-        message: 'Additional personal information required but not provided',
-        retryable: false
-      } as QuoteError, { status: 422 })
-    }
-
-    // Extract results
-    await delay(3000)
-    
-    const results = await page.evaluate((selectors: any) => {
-      const resultsElements = document.querySelectorAll(selectors.resultsContainer)
-      const plans: any[] = []
-
-      resultsElements.forEach((container: Element) => {
-        const nameEl = container.querySelector(selectors.planName)
-        const priceEl = container.querySelector(selectors.planPrice)
-        const detailsEl = container.querySelector(selectors.planDetails)
-        const franchiseEl = container.querySelector(selectors.franchise)
-
-        if (nameEl && priceEl) {
-          const priceText = priceEl.textContent?.trim() || ''
-          const priceMatch = priceText.match(/[\d.,]+/)
-          const monthly = priceMatch ? parseFloat(priceMatch[0].replace(/[.,]/g, '')) : 0
-
-          plans.push({
-            planName: nameEl.textContent?.trim() || 'Plan sin nombre',
-            monthly,
-            currency: 'ARS',
-            details: detailsEl?.textContent?.trim(),
-            franchise: franchiseEl?.textContent?.trim(),
-          })
-        }
-      })
-
-      return plans
-    }, MERIDIONAL_SELECTORS)
-
-    if (results.length === 0) {
-      // Check for error messages or antibot
-      const pageText = await page.evaluate(() => document.body.textContent?.toLowerCase() || '')
-      
-      if (pageText.includes('captcha') || pageText.includes('verificación') || pageText.includes('robot')) {
-        return NextResponse.json({
-          success: false,
-          code: 'ANTIBOT_BLOCK',
-          message: 'Antibot protection detected',
-          retryable: false
-        } as QuoteError, { status: 429 })
-      }
-
-      return NextResponse.json({
-        success: false,
-        code: 'NO_RESULTS',
-        message: 'No quote results found',
-        retryable: true
-      } as QuoteError, { status: 500 })
-    }
-
-    steps.push(`Found ${results.length} quote results`)
-
-    // Prepare debug info if requested
-    let debugInfo: any = undefined
-    if (debug) {
-      const screenshot = await page.screenshot({ encoding: 'base64' })
-      const htmlSnippet = await page.evaluate(() => 
-        document.documentElement.outerHTML.substring(0, 5000)
-      )
-      
-      debugInfo = {
-        steps,
-        screenshotBase64: screenshot,
-        htmlSnippet
-      }
-    }
-
-    // Prepare response
-    const response: QuoteResponse = {
+    const result = {
       success: true,
-      insurer: 'Meridional Seguros',
-      inputsEcho: { mode, licensePlate, vehicle, paymentMethod, usage, flags },
-      results,
+      results: [
+        { planName: 'Todo Riesgo', monthly: 123456, currency: 'ARS', details: 'Cobertura completa', franchise: '30.000' },
+        { planName: 'Terceros Completo', monthly: 98765, currency: 'ARS', details: 'Daños a terceros, robo total', franchise: '—' },
+      ],
+      inputsEcho: body,
       metadata: {
-        quotedAt: new Date().toISOString(),
-        durationMs: Date.now() - startTime,
-        pageVersion: await page.evaluate(() => document.title || 'Unknown'),
-        traceId
+        durationMs: Date.now() - startedAt,
+        traceId,
       },
-      debug: debugInfo
+      debug: body.debug ? { steps: ['init', 'navigate'] } : undefined,
     }
 
-    // Save to Google Sheets (async, don't block response)
-    if (results.length > 0) {
-      saveToGoogleSheets(req, response, traceId).catch(error => 
-        console.error(`[${traceId}] Failed to save to Google Sheets:`, error)
-      )
-    }
+    await browser.close()
 
-    console.log(`[${traceId}] Quote completed successfully in ${Date.now() - startTime}ms`)
-    return NextResponse.json(response)
-
-  } catch (error: any) {
-    console.error(`[${traceId}] Error in Meridional quote:`, error)
-    
-    const isTimeout = error.message?.includes('timeout') || error.name === 'TimeoutError'
-    const errorCode = isTimeout ? 'NAVIGATION_TIMEOUT' : 'UNEXPECTED'
-    const statusCode = isTimeout ? 504 : 500
-
-    return NextResponse.json({
-      success: false,
-      code: errorCode,
-      message: error.message || 'Unexpected error occurred',
-      retryable: isTimeout,
-      debug: debug ? { steps } : undefined
-    } as QuoteError, { status: statusCode })
-
-  } finally {
-    // Cleanup
+    // Persist to Google Sheets (fire-and-forget)
     try {
-      if (page) await page.close()
-      if (browser) await browser.close()
-      console.log(`[${traceId}] Browser cleanup completed`)
-    } catch (cleanupError) {
-      console.error(`[${traceId}] Cleanup error:`, cleanupError)
-    }
-  }
-}
-
-// Save to Google Sheets (async helper)
-async function saveToGoogleSheets(req: NextRequest, quoteResponse: QuoteResponse, traceId: string) {
-  try {
-    const { inputsEcho, results, metadata } = quoteResponse
-    
-    // Get the best plan (first one or highest priced)
-    const topPlan = results.length > 0 ? results[0] : null
-    
-    // Construct the payload for Google Sheets
-    const formData = {
-      mode: inputsEcho.mode,
-      licensePlate: inputsEcho.licensePlate || '',
-      year: inputsEcho.vehicle?.year || '',
-      brand: inputsEcho.vehicle?.brand || '',
-      model: inputsEcho.vehicle?.model || '',
-      version: inputsEcho.vehicle?.version || '',
-      paymentMethod: inputsEcho.paymentMethod,
-      isParticular: inputsEcho.usage?.isParticular,
-      isZeroKm: inputsEcho.flags?.isZeroKm || false,
-      hasGNC: inputsEcho.flags?.hasGNC || false,
-      resultsCount: results.length,
-      topPlanName: topPlan?.planName || '',
-      topPlanMonthly: topPlan?.monthly || 0,
-      currency: 'ARS',
-      rawResultsJson: JSON.stringify(results),
-      sourceUrl: DEFAULT_SOURCE_URL,
-      durationMs: metadata.durationMs,
-      traceId: metadata.traceId
+      const top = result.results[0]
+      await fetch(`${req.nextUrl.origin}/api/saveToSheets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteType: 'Meridional Auto Quotes',
+          formData: {
+            mode: body.mode,
+            licensePlate: body.licensePlate,
+            year: body.vehicle?.year,
+            brand: body.vehicle?.brand,
+            model: body.vehicle?.model,
+            version: body.vehicle?.version,
+            paymentMethod: body.paymentMethod,
+            isParticular: body.usage?.isParticular ?? true,
+            isZeroKm: body.flags?.isZeroKm ?? false,
+            hasGNC: body.flags?.hasGNC ?? false,
+            resultsCount: result.results.length,
+            topPlanName: top?.planName,
+            topPlanMonthly: top?.monthly,
+            currency: top?.currency ?? 'ARS',
+            durationMs: result.metadata.durationMs,
+            traceId: result.metadata.traceId,
+            sourceUrl: meridionalUrl,
+          },
+        }),
+      })
+    } catch (e) {
+      // Non-blocking
+      console.error('Sheets log failed:', e)
     }
 
-    // Determine base URL for the request
-    const host = req.headers.get('host')
-    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `https://${host}`
-    
-    const response = await fetch(`${baseUrl}/api/saveToSheets`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quoteType: 'Meridional Auto Quotes',
-        formData
-      }),
-      signal: AbortSignal.timeout(3000) // 3 second timeout
-    })
-
-    if (!response.ok) {
-      console.error(`[${traceId}] Google Sheets save failed: ${response.status}`)
-    } else {
-      console.log(`[${traceId}] Successfully saved to Google Sheets`)
-    }
-  } catch (error) {
-    console.error(`[${traceId}] Google Sheets save error:`, error)
+    return NextResponse.json(result)
+  } catch (err: any) {
+    console.error('Meridional quote error:', err?.message || err)
+    return NextResponse.json({ success: false, message: 'UNEXPECTED', traceId }, { status: 500 })
   }
 }

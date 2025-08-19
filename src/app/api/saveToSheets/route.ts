@@ -57,6 +57,27 @@ const getHeaders = (quoteType: string) => {
                 'SolicitorContacto',
                 'Mensaje',
             ]
+        case 'Meridional Auto Quotes':
+            return [
+                'Fecha',
+                'Mode',
+                'License Plate',
+                'Year',
+                'Brand',
+                'Model',
+                'Version',
+                'Payment Method',
+                'Is Particular',
+                'Is 0Km',
+                'Has GNC',
+                'Results Count',
+                'Top Plan Name',
+                'Top Plan Monthly',
+                'Currency',
+                'Duration (ms)',
+                'Trace ID',
+                'Source URL',
+            ]
         case 'Hogar':
         case 'Vida':
         case 'Negocios':

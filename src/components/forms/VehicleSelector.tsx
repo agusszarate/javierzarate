@@ -42,6 +42,14 @@ export function VehicleSelector() {
                     isZeroKm: state.vehicleInfo.flags.isZeroKm,
                     hasGNC: state.vehicleInfo.flags.hasGNC,
                 },
+                owner: {
+                    documentType: 'DNI',
+                    documentNumber: state.personalInfo.dni || '',
+                    birthDate: state.personalInfo.birthDate || '',
+                    email: state.personalInfo.email,
+                    phone: state.personalInfo.phone,
+                },
+                location: { postalCode: state.postalCode },
                 debug: false,
             }
 
@@ -88,10 +96,15 @@ export function VehicleSelector() {
 
     const isFormValid = () => {
         const { vehicleInfo } = state
+        const baseOwnerValid = Boolean(state.personalInfo.dni) &&
+            Boolean(state.personalInfo.birthDate && /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/.test(state.personalInfo.birthDate)) &&
+            Boolean(state.postalCode && state.postalCode.length >= 4)
+
         if (vehicleInfo.mode === 'byPlate') {
-            return vehicleInfo.licensePlate && vehicleInfo.licensePlate.length >= 6
+            return !!(vehicleInfo.licensePlate && vehicleInfo.licensePlate.length >= 6 && baseOwnerValid)
         } else {
             return (
+                baseOwnerValid &&
                 vehicleInfo.year &&
                 vehicleInfo.brand &&
                 vehicleInfo.model &&
