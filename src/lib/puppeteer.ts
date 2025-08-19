@@ -119,14 +119,16 @@ export const MERIDIONAL_SELECTORS = {
   
   // Input fields - enhanced with more variations and fallbacks
   licensePlateInput: [
-    'input[placeholder*="patente"]',
-    'input[name*="patente"]', 
-    'input[id*="patente"]',
-    'input[placeholder*="dominio"]',
-    'input[name*="dominio"]',
-    'input[id*="dominio"]',
-    'input[placeholder*="placa"]',
-    'input[name*="placa"]',
+    'input[placeholder="Patente"]',
+    'input[placeholder*="patente" i]',
+    'input[placeholder*="Patente"]',
+    'input[name*="patente" i]', 
+    'input[id*="patente" i]',
+    'input[placeholder*="dominio" i]',
+    'input[name*="dominio" i]',
+    'input[id*="dominio" i]',
+    'input[placeholder*="placa" i]',
+    'input[name*="placa" i]',
     'input[placeholder*="AAA"]',
     'input[placeholder*="123"]', 
     'input[maxlength="6"]',
@@ -232,8 +234,8 @@ export const MERIDIONAL_SELECTORS = {
     'input[type="submit"]',
     '.btn-primary',
     '.btn-search',
-    'button:contains("Buscar")',
-    'button:contains("Cotizar")'
+    'button.btn.btn-primary',
+    'button.btn-primary'
   ].join(', '),
   
   nextButton: [
@@ -334,6 +336,7 @@ export async function findElementAggressive(page: any, elementType: 'licensePlat
         
         // High score indicators
         if (attrs.includes('patente')) score += 100
+        if (attrs.includes('Patente')) score += 100  // Case-sensitive match
         if (attrs.includes('dominio')) score += 90
         if (attrs.includes('placa')) score += 80
         if (attrs.includes('plate')) score += 70
@@ -388,12 +391,15 @@ export async function findElementAggressive(page: any, elementType: 'licensePlat
         ].join(' ')
         
         if (
+          text.includes('buscar vehículo') ||
+          text.includes('buscar vehiculo') ||
           text.includes('buscar') || 
           text.includes('cotizar') || 
           text.includes('siguiente') ||
           text.includes('continuar') ||
           attrs.includes('submit') ||
           attrs.includes('search') ||
+          attrs.includes('primary') ||
           (button as HTMLButtonElement).type === 'submit'
         ) {
           return {
