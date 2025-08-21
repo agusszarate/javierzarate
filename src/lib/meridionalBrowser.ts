@@ -1,40 +1,78 @@
 // Puppeteer browser management utilities for Meridional scraping
 import puppeteer, { Browser, Page } from 'puppeteer-core'
 
+// Find Chrome executable path with better fallback logic
+const findChromeExecutable = () => {
+    const possiblePaths = [
+        process.env.CHROME_EXECUTABLE_PATH,
+        '/opt/google/chrome/google-chrome',  // Final resolved path
+        '/usr/bin/google-chrome-stable',     // Direct stable version
+        '/usr/bin/google-chrome',            // Symlink (may not work with puppeteer-core)
+        '/usr/bin/chromium-browser',         // Ubuntu/Debian Chromium
+        '/usr/bin/chromium',                 // Alternative Chromium
+    ].filter(Boolean)
+
+    for (const path of possiblePaths) {
+        try {
+            // Check if the file exists and is executable
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const fs = require('fs')
+            if (fs.existsSync(path) && fs.accessSync(path, fs.constants.X_OK) === undefined) {
+                return path
+            }
+        } catch {
+            continue
+        }
+    }
+    
+    throw new Error(`No Chrome executable found. Tried paths: ${possiblePaths.join(', ')}`)
+}
+
 // Chromium config for different environments
 const getChromiumConfig = () => {
-    const isProduction = process.env.NODE_ENV === 'production'
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL
     
     if (isProduction) {
         // Use @sparticuz/chromium for Vercel deployment
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const chromium = require('@sparticuz/chromium')
-        return {
-            executablePath: chromium.executablePath,
-            args: [
-                ...chromium.args,
-                '--disable-gpu',
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--single-process',
-                '--no-zygote',
-                '--disable-dev-shm-usage',
-            ],
-            headless: chromium.headless,
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const chromium = require('@sparticuz/chromium')
+            return {
+                executablePath: chromium.executablePath,
+                args: [
+                    ...chromium.args,
+                    '--disable-gpu',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--single-process',
+                    '--no-zygote',
+                    '--disable-dev-shm-usage',
+                ],
+                headless: chromium.headless,
+            }
+        } catch (error) {
+            console.warn('Failed to load @sparticuz/chromium, falling back to system Chrome:', error)
+            // Fallback to system Chrome if @sparticuz/chromium is not available
         }
-    } else {
-        // Development: use system Chrome or skip if not available
-        const executablePath = process.env.CHROME_EXECUTABLE_PATH || '/usr/bin/google-chrome'
-        return {
-            executablePath,
-            args: [
-                '--disable-gpu',
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-            ],
-            headless: true,
-        }
+    }
+    
+    // Development or fallback: use system Chrome
+    const executablePath = findChromeExecutable()
+    return {
+        executablePath,
+        args: [
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-web-security',
+            '--disable-extensions',
+            '--no-first-run',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+        ],
+        headless: true,
     }
 }
 
@@ -52,40 +90,53 @@ export class MeridionalBrowser {
     private page: Page | null = null
     
     async launch(config: BrowserConfig = {}) {
-        const chromiumConfig = getChromiumConfig()
-        
-        this.browser = await puppeteer.launch({
-            ...chromiumConfig,
-            timeout: config.timeout || 30000,
-        })
-        
-        this.page = await this.browser.newPage()
-        
-        // Set realistic browser configuration
-        await this.page.setUserAgent(
-            config.userAgent || 
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        )
-        
-        await this.page.setViewport(
-            config.viewport || { width: 1366, height: 768 }
-        )
-        
-        // Set language and timezone for Argentina
-        await this.page.setExtraHTTPHeaders({
-            'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
-        })
-        
-        await this.page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, 'language', {
-                get: () => 'es-AR',
+        try {
+            const chromiumConfig = getChromiumConfig()
+            
+            console.log(`Launching browser with executable: ${chromiumConfig.executablePath}`)
+            
+            this.browser = await puppeteer.launch({
+                ...chromiumConfig,
+                timeout: config.timeout || 30000,
             })
-            Object.defineProperty(navigator, 'languages', {
-                get: () => ['es-AR', 'es', 'en'],
+            
+            this.page = await this.browser.newPage()
+            
+            // Set realistic browser configuration
+            await this.page.setUserAgent(
+                config.userAgent || 
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            )
+            
+            await this.page.setViewport(
+                config.viewport || { width: 1366, height: 768 }
+            )
+            
+            // Set language and timezone for Argentina
+            await this.page.setExtraHTTPHeaders({
+                'Accept-Language': 'es-AR,es;q=0.9,en;q=0.8',
             })
-        })
-        
-        return this.page
+            
+            await this.page.evaluateOnNewDocument(() => {
+                Object.defineProperty(navigator, 'language', {
+                    get: () => 'es-AR',
+                })
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['es-AR', 'es', 'en'],
+                })
+            })
+            
+            return this.page
+        } catch (error: any) {
+            console.error('Browser launch failed:', error)
+            if (error.message?.includes('Executable not found') || error.message?.includes('executablePath')) {
+                throw new Error(
+                    `Chrome browser not found. Please install Chrome or set CHROME_EXECUTABLE_PATH environment variable. ` +
+                    `Error: ${error.message}`
+                )
+            }
+            throw error
+        }
     }
     
     async close() {
