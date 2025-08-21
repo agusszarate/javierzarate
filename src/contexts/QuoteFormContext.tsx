@@ -58,6 +58,7 @@ export interface QuoteFormState {
     brand: string
     model: string
     version: string
+    driverAge: number | ''
     paymentMethod: 'Tarjeta de crédito' | 'CBU'
     flags: {
         isParticular: boolean
@@ -108,6 +109,7 @@ export interface QuoteFormActions {
     setBrand: (brand: string) => void
     setModel: (model: string) => void
     setVersion: (version: string) => void
+    setDriverAge: (age: number | '') => void
     setPaymentMethod: (method: 'Tarjeta de crédito' | 'CBU') => void
     setFlags: (flags: Partial<{ isParticular: boolean; isZeroKm: boolean; hasGNC: boolean }>) => void
 
@@ -159,6 +161,7 @@ const initialState: QuoteFormState = {
     brand: '',
     model: '',
     version: '',
+    driverAge: '',
     paymentMethod: 'Tarjeta de crédito',
     flags: {
         isParticular: true,
@@ -228,6 +231,7 @@ export function QuoteFormProvider({ children }: { children: ReactNode }) {
         setBrand: (brand) => setState((prev) => ({ ...prev, brand })),
         setModel: (model) => setState((prev) => ({ ...prev, model })),
         setVersion: (version) => setState((prev) => ({ ...prev, version })),
+        setDriverAge: (driverAge) => setState((prev) => ({ ...prev, driverAge })),
         setPaymentMethod: (paymentMethod) => setState((prev) => ({ ...prev, paymentMethod })),
         setFlags: (flags) => setState((prev) => ({ ...prev, flags: { ...prev.flags, ...flags } })),
 

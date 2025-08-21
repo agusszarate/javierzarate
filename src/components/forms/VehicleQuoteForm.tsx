@@ -51,6 +51,9 @@ export function VehicleQuoteForm() {
                         version: state.version || undefined,
                     }
                 }),
+                driver: {
+                    age: state.driverAge
+                },
                 paymentMethod: state.paymentMethod,
                 usage: {
                     isParticular: state.flags.isParticular,
@@ -88,6 +91,11 @@ export function VehicleQuoteForm() {
     }
 
     const isFormValid = () => {
+        // Driver age is required for both modes
+        if (!state.driverAge || state.driverAge < 18 || state.driverAge > 99) {
+            return false
+        }
+        
         if (state.mode === 'byPlate') {
             return state.licensePlate.trim().length > 0
         } else {
@@ -172,6 +180,20 @@ export function VehicleQuoteForm() {
                         </div>
                     </div>
                 )}
+
+                {/* Driver Age - Required for both modes */}
+                <div className="space-y-2">
+                    <Label htmlFor="driverAge">Edad del Conductor *</Label>
+                    <Input
+                        id="driverAge"
+                        type="number"
+                        placeholder="25"
+                        min="18"
+                        max="99"
+                        value={state.driverAge || ''}
+                        onChange={(e) => actions.setDriverAge(parseInt(e.target.value) || '')}
+                    />
+                </div>
 
                 {/* Payment Method */}
                 <div className="space-y-2">

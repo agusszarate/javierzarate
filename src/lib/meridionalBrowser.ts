@@ -115,6 +115,7 @@ export const MERIDIONAL_SELECTORS = {
     brandInput: 'input[placeholder="Marca"]',
     modelInput: 'input[placeholder="Modelo"]',
     versionInput: 'input[placeholder="Versión"], input[placeholder="Version"]',
+    ageInput: 'input[placeholder="Edad"], input[name="edad"], input[id*="edad"], input[id*="age"]',
     paymentMethodSelect: '#IdMedioPago, select[name="medioPago"]',
     usageCheckbox: '#flexCheckUsoParticular, input[type="checkbox"]:has-text("Uso particular")',
     zeroKmCheckbox: '#flexCheckEs0Km, input[type="checkbox"]:has-text("Es 0Km")',

@@ -16,6 +16,10 @@ interface QuoteRequestByPlate {
     paymentMethod?: 'Tarjeta de crédito' | 'CBU'
     usage: { isParticular: boolean }
     flags?: { isZeroKm?: boolean; hasGNC?: boolean }
+    driver?: {
+        age?: number
+        birthDate?: string
+    }
     owner?: {
         documentType?: 'DNI' | 'CUIT'
         documentNumber?: string
@@ -43,6 +47,10 @@ interface QuoteRequestByVehicle {
     paymentMethod?: 'Tarjeta de crédito' | 'CBU'
     usage: { isParticular: boolean }
     flags?: { isZeroKm?: boolean; hasGNC?: boolean }
+    driver?: {
+        age?: number
+        birthDate?: string
+    }
     owner?: {
         documentType?: 'DNI' | 'CUIT'
         documentNumber?: string
@@ -196,7 +204,40 @@ const performMeridionalScraping = async (
             }
         }
         
-        // Step 6: Set payment method
+        // Step 6: Set driver age if provided
+        if (request.driver?.age) {
+            steps.push(`Setting driver age: ${request.driver.age}`)
+            try {
+                await typeText(page, MERIDIONAL_SELECTORS.ageInput, request.driver.age.toString(), 5000)
+                await humanDelay()
+            } catch (error) {
+                steps.push(`Warning: Could not set driver age: ${error}`)
+                // If age field is required and missing, this might cause the 500 error
+                // Let's check if the age field exists on the page
+                const ageFieldExists = await page.$(MERIDIONAL_SELECTORS.ageInput)
+                if (!ageFieldExists) {
+                    steps.push('Age field not found on page - may not be required at this step')
+                } else {
+                    steps.push('Age field exists but could not be filled - this may cause form submission to fail')
+                }
+            }
+        } else {
+            // Check if age field exists and might be required
+            try {
+                const ageFieldExists = await page.$(MERIDIONAL_SELECTORS.ageInput)
+                if (ageFieldExists) {
+                    steps.push('Age field found but no age provided - this may cause validation errors')
+                    // Set a default age if the field is required
+                    await typeText(page, MERIDIONAL_SELECTORS.ageInput, '30', 3000)
+                    steps.push('Set default age to 30')
+                }
+            } catch (error) {
+                steps.push('Age field check failed - proceeding without age')
+                console.log('Age field check error:', error)
+            }
+        }
+        
+        // Step 7: Set payment method
         const paymentValue = request.paymentMethod === 'CBU' ? '4' : '2' // Based on HTML options
         steps.push(`Setting payment method: ${request.paymentMethod || 'Tarjeta de crédito'}`)
         try {
@@ -206,7 +247,7 @@ const performMeridionalScraping = async (
             steps.push(`Warning: Could not set payment method: ${error}`)
         }
         
-        // Step 7: Set usage flags
+        // Step 8: Set usage flags
         steps.push('Setting usage flags')
         
         // Usage particular should be checked by default, ensure it's set correctly
@@ -241,7 +282,7 @@ const performMeridionalScraping = async (
             }
         }
         
-        // Step 8: Submit form
+        // Step 9: Submit form
         if (request.mode === 'byPlate') {
             steps.push('Clicking "Buscar vehículo"')
             await clickElement(page, MERIDIONAL_SELECTORS.searchButton, 5000)
@@ -250,7 +291,7 @@ const performMeridionalScraping = async (
             await clickElement(page, MERIDIONAL_SELECTORS.nextButton, 5000)
         }
         
-        // Step 9: Wait for navigation or results
+        // Step 10: Wait for navigation or results
         steps.push('Waiting for response/navigation')
         try {
             await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 })
@@ -259,14 +300,14 @@ const performMeridionalScraping = async (
             steps.push('No navigation detected, checking for results on current page')
         }
         
-        // Step 10: Check for additional data requirements
+        // Step 11: Check for additional data requirements
         // This is where we might need to fill personal info if required
         if (request.owner || request.location) {
             steps.push('Checking for additional data requirements')
             // TODO: Implement personal data and location filling if needed
         }
         
-        // Step 11: Extract results
+        // Step 12: Extract results
         steps.push('Extracting quote results')
         
         // Wait for results container
@@ -384,7 +425,7 @@ const performMeridionalScraping = async (
         
         steps.push(`Successfully extracted ${results.length} quote results`)
         
-        // Step 12: Save to Google Sheets if successful
+        // Step 13: Save to Google Sheets if successful
         if (results.length > 0) {
             try {
                 steps.push('Saving to Google Sheets')
