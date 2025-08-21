@@ -57,6 +57,27 @@ const getHeaders = (quoteType: string) => {
                 'SolicitorContacto',
                 'Mensaje',
             ]
+        case 'Meridional Auto Quotes':
+            return [
+                ...baseHeaders,
+                'Modo',
+                'Patente',
+                'Año',
+                'Marca',
+                'Modelo',
+                'Version',
+                'Medio de Pago',
+                'Uso Particular',
+                'Es 0Km',
+                'Tiene GNC',
+                'Planes Encontrados',
+                'Plan Principal',
+                'Precio Mensual',
+                'Moneda',
+                'Datos Completos',
+                'Fuente',
+                'Trace ID',
+            ]
         case 'Hogar':
         case 'Vida':
         case 'Negocios':
@@ -209,6 +230,30 @@ export async function POST(req: NextRequest) {
                 formData.activarZonaId || '',
                 formData.solicitorContacto || 'false',
                 formData.message || '',
+            ]
+        } else if (quoteType === 'Meridional Auto Quotes') {
+            rowData = [
+                currentDate,
+                formData.name || '',
+                formData.email || '',
+                formData.phone || '',
+                formData.mode || '',
+                formData.licensePlate || '',
+                formData.year || '',
+                formData.brand || '',
+                formData.model || '',
+                formData.version || '',
+                formData.paymentMethod || '',
+                formData.isParticular ? 'Sí' : 'No',
+                formData.isZeroKm ? 'Sí' : 'No',
+                formData.hasGNC ? 'Sí' : 'No',
+                formData.resultsCount || '0',
+                formData.topPlanName || '',
+                formData.topPlanMonthly || '',
+                formData.currency || '',
+                formData.rawResultsJson || '',
+                formData.sourceUrl || '',
+                formData.traceId || '',
             ]
         } else {
             rowData = [

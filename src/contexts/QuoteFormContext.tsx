@@ -51,6 +51,20 @@ export interface QuoteFormState {
     activarYear: number | ''
     activarSeccion: 'moto' | 'cuatri' | ''
 
+    // Meridional vehicle data
+    mode: 'byPlate' | 'byVehicle'
+    licensePlate: string
+    year: number | ''
+    brand: string
+    model: string
+    version: string
+    paymentMethod: 'Tarjeta de crédito' | 'CBU'
+    flags: {
+        isParticular: boolean
+        isZeroKm: boolean
+        hasGNC: boolean
+    }
+
     // Quote results
     showQuote: boolean
     quoteResult: any
@@ -86,6 +100,16 @@ export interface QuoteFormActions {
     setActivarModelo: (modelo: ActivarModel) => void
     setActivarYear: (year: number | '') => void
     setActivarSeccion: (seccion: 'moto' | 'cuatri' | '') => void
+
+    // Meridional vehicle actions
+    setMode: (mode: 'byPlate' | 'byVehicle') => void
+    setLicensePlate: (plate: string) => void
+    setYear: (year: number | '') => void
+    setBrand: (brand: string) => void
+    setModel: (model: string) => void
+    setVersion: (version: string) => void
+    setPaymentMethod: (method: 'Tarjeta de crédito' | 'CBU') => void
+    setFlags: (flags: Partial<{ isParticular: boolean; isZeroKm: boolean; hasGNC: boolean }>) => void
 
     // Quote result actions
     setShowQuote: (show: boolean) => void
@@ -128,6 +152,19 @@ const initialState: QuoteFormState = {
     activarModelo: { code: '', model: '' },
     activarYear: '',
     activarSeccion: 'moto',
+    // Meridional vehicle data
+    mode: 'byPlate',
+    licensePlate: '',
+    year: '',
+    brand: '',
+    model: '',
+    version: '',
+    paymentMethod: 'Tarjeta de crédito',
+    flags: {
+        isParticular: true,
+        isZeroKm: false,
+        hasGNC: false,
+    },
     showQuote: false,
     quoteResult: null,
     loading: false,
@@ -183,6 +220,16 @@ export function QuoteFormProvider({ children }: { children: ReactNode }) {
         setActivarModelo: (activarModelo) => setState((prev) => ({ ...prev, activarModelo })),
         setActivarYear: (activarYear) => setState((prev) => ({ ...prev, activarYear })),
         setActivarSeccion: (activarSeccion) => setState((prev) => ({ ...prev, activarSeccion })),
+
+        // Meridional vehicle actions
+        setMode: (mode) => setState((prev) => ({ ...prev, mode })),
+        setLicensePlate: (licensePlate) => setState((prev) => ({ ...prev, licensePlate })),
+        setYear: (year) => setState((prev) => ({ ...prev, year })),
+        setBrand: (brand) => setState((prev) => ({ ...prev, brand })),
+        setModel: (model) => setState((prev) => ({ ...prev, model })),
+        setVersion: (version) => setState((prev) => ({ ...prev, version })),
+        setPaymentMethod: (paymentMethod) => setState((prev) => ({ ...prev, paymentMethod })),
+        setFlags: (flags) => setState((prev) => ({ ...prev, flags: { ...prev.flags, ...flags } })),
 
         // Quote result actions
         setShowQuote: (showQuote) => setState((prev) => ({ ...prev, showQuote })),
