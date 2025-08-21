@@ -3,11 +3,15 @@ import puppeteer, { Browser, Page } from 'puppeteer-core'
 
 // Find Chrome executable path with better fallback logic
 const findChromeExecutable = () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require('fs')
+    
     const possiblePaths = [
         process.env.CHROME_EXECUTABLE_PATH,
-        '/opt/google/chrome/google-chrome',  // Final resolved path
-        '/usr/bin/google-chrome-stable',     // Direct stable version
-        '/usr/bin/google-chrome',            // Symlink (may not work with puppeteer-core)
+        '/opt/google/chrome/chrome',         // Direct Chrome binary (preferred)
+        '/opt/google/chrome/google-chrome',  // Chrome wrapper script
+        '/usr/bin/google-chrome-stable',     // Stable version symlink
+        '/usr/bin/google-chrome',            // Generic symlink
         '/usr/bin/chromium-browser',         // Ubuntu/Debian Chromium
         '/usr/bin/chromium',                 // Alternative Chromium
     ].filter(Boolean)
@@ -15,9 +19,24 @@ const findChromeExecutable = () => {
     for (const path of possiblePaths) {
         try {
             // Check if the file exists and is executable
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const fs = require('fs')
             if (fs.existsSync(path) && fs.accessSync(path, fs.constants.X_OK) === undefined) {
+                // For symlinks, resolve to the actual binary if it's a direct binary
+                try {
+                    const resolvedPath = fs.realpathSync(path)
+                    
+                    // Prefer direct binaries over wrapper scripts
+                    if (resolvedPath.endsWith('/chrome') && !resolvedPath.includes('google-chrome')) {
+                        return resolvedPath
+                    }
+                    
+                    // Check if the resolved path is also executable
+                    if (fs.existsSync(resolvedPath) && fs.accessSync(resolvedPath, fs.constants.X_OK) === undefined) {
+                        return resolvedPath
+                    }
+                } catch {
+                    // If realpath fails, fall back to original path
+                }
+                
                 return path
             }
         } catch {
