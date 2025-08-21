@@ -5,16 +5,38 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useQuoteForm } from '@/contexts/QuoteFormContext'
-import { Loader2, Car, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Loader2, Car, ToggleLeft, ToggleRight, CheckCircle, AlertCircle, DollarSign } from 'lucide-react'
+
+interface MeridionalQuoteResult {
+    success: boolean
+    insurer?: string
+    results?: Array<{
+        planName: string
+        monthly: number
+        currency: string
+        details?: string
+        franchise?: string
+    }>
+    metadata?: {
+        quotedAt: string
+        durationMs: number
+        traceId: string
+    }
+    code?: string
+    message?: string
+}
 
 export function VehicleQuoteForm() {
     const { state, actions } = useQuoteForm()
     const [isLoading, setIsLoading] = useState(false)
+    const [quoteResult, setQuoteResult] = useState<MeridionalQuoteResult | null>(null)
 
     const handleSubmit = async () => {
         setIsLoading(true)
         actions.setLoading(true)
+        setQuoteResult(null)
 
         try {
             const payload = {
@@ -47,17 +69,18 @@ export function VehicleQuoteForm() {
             })
 
             const data = await response.json()
+            setQuoteResult(data)
 
             if (response.ok && data.success) {
                 actions.setQuoteResult(data)
                 actions.setShowQuote(true)
-            } else {
-                console.error('Error getting quote:', data)
-                // TODO: Show user-friendly error message
             }
         } catch (error) {
             console.error('Error submitting quote:', error)
-            // TODO: Show user-friendly error message
+            setQuoteResult({
+                success: false,
+                message: 'Error de conexión. Por favor, intenta nuevamente.',
+            })
         } finally {
             setIsLoading(false)
             actions.setLoading(false)
@@ -225,6 +248,89 @@ export function VehicleQuoteForm() {
                     )}
                 </Button>
             </div>
+
+            {/* Results Display */}
+            {quoteResult && (
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            {quoteResult.success ? (
+                                <>
+                                    <CheckCircle className="h-5 w-5 text-green-600" />
+                                    Cotización Exitosa
+                                </>
+                            ) : (
+                                <>
+                                    <AlertCircle className="h-5 w-5 text-red-600" />
+                                    Error en la Cotización
+                                </>
+                            )}
+                        </CardTitle>
+                        {quoteResult.success && quoteResult.insurer && (
+                            <CardDescription>
+                                Resultados de {quoteResult.insurer}
+                            </CardDescription>
+                        )}
+                    </CardHeader>
+                    <CardContent>
+                        {quoteResult.success && quoteResult.results ? (
+                            <div className="space-y-4">
+                                {quoteResult.results.map((plan, index) => (
+                                    <Card key={index} className="border border-green-200 bg-green-50/50">
+                                        <CardContent className="p-4">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h4 className="font-semibold text-lg text-green-800">
+                                                        {plan.planName}
+                                                    </h4>
+                                                    {plan.details && (
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            {plan.details}
+                                                        </p>
+                                                    )}
+                                                    {plan.franchise && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Franquicia: {plan.franchise}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="flex items-center gap-1 text-2xl font-bold text-green-700">
+                                                        <DollarSign className="h-5 w-5" />
+                                                        {plan.monthly.toLocaleString()}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {plan.currency} mensual
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                
+                                {quoteResult.metadata && (
+                                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                                        Cotización realizada el {new Date(quoteResult.metadata.quotedAt).toLocaleString('es-AR')}
+                                        {' · '}Duración: {Math.round(quoteResult.metadata.durationMs / 1000)}s
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-center py-4">
+                                <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                                <p className="text-red-600 font-medium">
+                                    {quoteResult.message || 'Error desconocido'}
+                                </p>
+                                {quoteResult.code && (
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Código: {quoteResult.code}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }
