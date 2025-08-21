@@ -4,6 +4,7 @@ import { QuoteFormProvider, useQuoteForm } from '@/contexts/QuoteFormContext'
 import { PersonalInfoForm } from './PersonalInfoForm'
 import { QuoteTypeSelector } from './QuoteTypeSelector'
 import { MotorcycleSelector } from './MotorcycleSelector'
+import { VehicleQuoteForm } from './VehicleQuoteForm'
 import { QuoteResults } from './QuoteResults'
 import { Button } from '@/components/ui/button'
 import { Loader2, Send } from 'lucide-react'
@@ -140,24 +141,22 @@ function ModernQuoteFormContent() {
             </Card>
           )}
 
-          {/* Traditional Vehicle Form would go here */}
+          {/* Vehicle Quote Form */}
           {state.quoteType === 'Vehiculo' && (
             <Card>
               <CardHeader>
-                <CardTitle>🚗 Datos del Vehículo</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  🚗 Datos del Vehículo
+                  <span className="text-sm bg-secondary text-secondary-foreground px-2 py-1 rounded-full">
+                    Meridional Seguros
+                  </span>
+                </CardTitle>
                 <CardDescription>
-                  Completa la información de tu vehículo
+                  Completa la información de tu vehículo para obtener una cotización con Meridional Seguros
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-muted/20 border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">
-                    🚧 Formulario de vehículos tradicionales
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Por ahora, usa el formulario de contacto general
-                  </p>
-                </div>
+                <VehicleQuoteForm />
               </CardContent>
             </Card>
           )}
