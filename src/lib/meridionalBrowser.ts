@@ -6,6 +6,21 @@ const findChromeExecutable = () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs')
     
+    // Try to use bundled Chromium from puppeteer package first
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const puppeteer = require('puppeteer')
+        if (puppeteer.executablePath) {
+            const bundledPath = puppeteer.executablePath()
+            if (fs.existsSync(bundledPath)) {
+                console.log(`Using bundled Chromium: ${bundledPath}`)
+                return bundledPath
+            }
+        }
+    } catch {
+        console.log('puppeteer package not available or no bundled Chromium, trying system paths...')
+    }
+    
     const possiblePaths = [
         process.env.CHROME_EXECUTABLE_PATH,
         '/opt/google/chrome/chrome',         // Direct Chrome binary (preferred)
@@ -14,30 +29,36 @@ const findChromeExecutable = () => {
         '/usr/bin/google-chrome',            // Generic symlink
         '/usr/bin/chromium-browser',         // Ubuntu/Debian Chromium
         '/usr/bin/chromium',                 // Alternative Chromium
+        // macOS paths
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/Applications/Chromium.app/Contents/MacOS/Chromium',
     ].filter(Boolean)
 
-    for (const path of possiblePaths) {
+    for (const execPath of possiblePaths) {
         try {
             // Check if the file exists and is executable
-            if (fs.existsSync(path) && fs.accessSync(path, fs.constants.X_OK) === undefined) {
+            if (fs.existsSync(execPath) && fs.accessSync(execPath, fs.constants.X_OK) === undefined) {
                 // For symlinks, resolve to the actual binary if it's a direct binary
                 try {
-                    const resolvedPath = fs.realpathSync(path)
+                    const resolvedPath = fs.realpathSync(execPath)
                     
                     // Prefer direct binaries over wrapper scripts
                     if (resolvedPath.endsWith('/chrome') && !resolvedPath.includes('google-chrome')) {
+                        console.log(`Using resolved Chrome path: ${resolvedPath}`)
                         return resolvedPath
                     }
                     
                     // Check if the resolved path is also executable
                     if (fs.existsSync(resolvedPath) && fs.accessSync(resolvedPath, fs.constants.X_OK) === undefined) {
+                        console.log(`Using resolved Chrome path: ${resolvedPath}`)
                         return resolvedPath
                     }
                 } catch {
                     // If realpath fails, fall back to original path
                 }
                 
-                return path
+                console.log(`Using Chrome path: ${execPath}`)
+                return execPath
             }
         } catch {
             continue
@@ -51,11 +72,12 @@ const findChromeExecutable = () => {
 const getChromiumConfig = () => {
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL
     
-    if (isProduction) {
-        // Use @sparticuz/chromium for Vercel deployment
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const chromium = require('@sparticuz/chromium')
+    // First try @sparticuz/chromium for production environments or if explicitly available
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const chromium = require('@sparticuz/chromium')
+        if (isProduction || chromium.executablePath) {
+            console.log('Using @sparticuz/chromium')
             return {
                 executablePath: chromium.executablePath,
                 args: [
@@ -69,29 +91,41 @@ const getChromiumConfig = () => {
                 ],
                 headless: chromium.headless,
             }
-        } catch (error) {
-            console.warn('Failed to load @sparticuz/chromium, falling back to system Chrome:', error)
-            // Fallback to system Chrome if @sparticuz/chromium is not available
         }
+    } catch (error) {
+        console.log('Failed to load @sparticuz/chromium, trying local Chrome:', error instanceof Error ? error.message : String(error))
     }
     
-    // Development or fallback: use system Chrome
-    const executablePath = findChromeExecutable()
-    return {
-        executablePath,
-        args: [
-            '--disable-gpu',
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-web-security',
-            '--disable-extensions',
-            '--no-first-run',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-        ],
-        headless: true,
+    // Development or fallback: use bundled Chromium or system Chrome
+    try {
+        const executablePath = findChromeExecutable()
+        return {
+            executablePath,
+            args: [
+                '--disable-gpu',
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-web-security',
+                '--disable-extensions',
+                '--no-first-run',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--disable-sync',
+                '--disable-translate',
+                '--hide-scrollbars',
+                '--mute-audio',
+                '--disable-default-apps',
+            ],
+            headless: true,
+        }
+    } catch (error) {
+        throw new Error(
+            `Unable to find Chrome/Chromium executable. ` +
+            `For development, install Chrome or Chromium, or set CHROME_EXECUTABLE_PATH environment variable. ` +
+            `Original error: ${error instanceof Error ? error.message : String(error)}`
+        )
     }
 }
 
