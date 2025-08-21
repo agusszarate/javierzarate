@@ -109,31 +109,74 @@ export class MeridionalBrowser {
 
 export const MERIDIONAL_SELECTORS = {
     // Form selectors based on the provided HTML
-    toggleWithoutPlate: 'input[type="checkbox"][role="switch"]',
+    toggleWithoutPlate: 'input[type="checkbox"][role="switch"], #flexSwitchCheckDefault',
     licensePlateInput: 'input[placeholder="Patente"]',
     yearInput: 'input[placeholder="Año del vehículo"]',
     brandInput: 'input[placeholder="Marca"]',
     modelInput: 'input[placeholder="Modelo"]',
-    paymentMethodSelect: '#IdMedioPago',
-    usageCheckbox: '#flexCheckUsoParticular',
-    zeroKmCheckbox: '#flexCheckEs0Km',
-    gncCheckbox: '#flexCheckPoseeGNC',
-    searchButton: 'button:contains("Buscar vehículo")',
-    nextButton: 'button:contains("Siguiente")',
+    versionInput: 'input[placeholder="Versión"], input[placeholder="Version"]',
+    paymentMethodSelect: '#IdMedioPago, select[name="medioPago"]',
+    usageCheckbox: '#flexCheckUsoParticular, input[type="checkbox"]:has-text("Uso particular")',
+    zeroKmCheckbox: '#flexCheckEs0Km, input[type="checkbox"]:has-text("Es 0Km")',
+    gncCheckbox: '#flexCheckPoseeGNC, input[type="checkbox"]:has-text("Tiene GNC")',
+    searchButton: 'button:has-text("Buscar vehículo"), button[type="submit"]:has-text("Buscar")',
+    nextButton: 'button:has-text("Siguiente"), button[type="submit"]:has-text("Siguiente")',
     
     // Container and loading selectors
-    formContainer: '#contactForm',
-    loadingIndicator: '.loading, .spinner',
+    formContainer: '#contactForm, form, .quote-form',
+    loadingIndicator: '.loading, .spinner, .progress',
     
-    // Cookie acceptance
-    cookieAccept: 'button:contains("Aceptar"), button:contains("Accept"), [data-cookie-accept]',
+    // Cookie acceptance (multiple variations)
+    cookieAccept: [
+        'button:has-text("Aceptar")',
+        'button:has-text("Accept")', 
+        'button:has-text("Aceitar")',
+        '[data-cookie-accept]',
+        '.cookie-accept',
+        '#accept-cookies'
+    ].join(', '),
     
-    // Results selectors (to be refined based on actual results page)
-    resultsContainer: '.results, .quotes, .plans',
-    planCard: '.plan, .quote-card, .insurance-plan',
-    planName: '.plan-name, .coverage-name',
-    planPrice: '.price, .premium, .monthly-price',
-    planDetails: '.details, .coverage-details',
+    // Results selectors (multiple variations to handle different page layouts)
+    resultsContainer: [
+        '.results', 
+        '.quotes', 
+        '.plans', 
+        '.cotizacion-results',
+        '.insurance-results',
+        '[data-results]'
+    ].join(', '),
+    
+    planCard: [
+        '.plan', 
+        '.quote-card', 
+        '.insurance-plan',
+        '.cotizacion-card',
+        '.result-item'
+    ].join(', '),
+    
+    planName: [
+        '.plan-name', 
+        '.coverage-name',
+        '.plan-title',
+        'h3', 'h4', 'h5',
+        '.title'
+    ].join(', '),
+    
+    planPrice: [
+        '.price', 
+        '.premium', 
+        '.monthly-price',
+        '.cost',
+        '.amount',
+        '[data-price]'
+    ].join(', '),
+    
+    planDetails: [
+        '.details', 
+        '.coverage-details',
+        '.description',
+        '.plan-info'
+    ].join(', '),
 } as const
 
 // Utility functions for common Puppeteer operations
