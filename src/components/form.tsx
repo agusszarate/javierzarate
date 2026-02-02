@@ -87,7 +87,7 @@ const Form = () => {
     // NEW: Handle section change with proper reset
     const handleActivarSectionChange = (newSection: 'moto' | 'cuatri') => {
         console.log(`[ACTIVAR] Section changed from ${activarSeccion} to: ${newSection}`)
-        
+
         // Reset dependent states
         setActivarMarca({ id: '', name: '' })
         setActivarModelo({ code: '', model: '' })
@@ -97,10 +97,10 @@ const Form = () => {
         setActivarYears([])
         setShowQuote(false)
         setQuoteResult(null)
-        
+
         // Set new section
         setActivarSeccion(newSection)
-        
+
         // Load brands for new section - this ensures correct section is used
         console.log(`[ACTIVAR] Loading brands for section: ${newSection}`)
         getActivarMarcas(newSection)
@@ -880,13 +880,13 @@ const Form = () => {
                                                 onChange={(e) => {
                                                     const yearValue = Number(e.target.value)
                                                     setActivarYear(yearValue)
-                                                    
+
                                                     // Find and store the corresponding value
                                                     const selectedYearObj = activarYears.find(
                                                         (yearObj) => yearObj.year === yearValue
                                                     )
                                                     setActivarYearValue(selectedYearObj?.value || '0')
-                                                    
+
                                                     // Reset quote when year changes
                                                     setShowQuote(false)
                                                     setQuoteResult(null)
