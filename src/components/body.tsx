@@ -15,7 +15,7 @@ import {
     ListItemText,
     Divider,
     Paper,
-    Grid2 as Grid,
+    Grid,
 } from '@mui/material'
 import { Home, Car, Briefcase, Heart, Check } from 'lucide-react'
 import Form from './form'

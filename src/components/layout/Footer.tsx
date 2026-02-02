@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Container, Grid2 as Grid, Typography, Link, Fab } from '@mui/material'
+import { Box, Container, Grid, Typography, Link, Fab } from '@mui/material'
 import { ArrowUpward as ArrowUpwardIcon } from '@mui/icons-material'
 import { ComponentProps } from '@/types/common'
 
